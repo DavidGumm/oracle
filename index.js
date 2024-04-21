@@ -467,8 +467,9 @@ const tester = (state, text, history, storyCards, info) => {
 
     // Don't modify this part
     modifier(text)
-
-    return { state, text, history, storyCards, info }
+    
+    const test = { state, text, history, storyCards, info };
+    return test
 }
 
 module.exports = tester;

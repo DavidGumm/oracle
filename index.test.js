@@ -1,7 +1,5 @@
 const tester = require("./index");
 
-
-
 const stateInitial = {
     key: "value",
     memory: { context: "This is the memory", authorsNote: "This is the authors note" },
@@ -24,30 +22,6 @@ const infoInitial = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-
-test("Test Fighting action", () => {
-    const text = "> You try to use fighting to defend yourself.";
-    expect(tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial))
-    .toStrictEqual({ state: stateInitial, text: text, history: historyInitial, storyCards: storyCardsInitial, info: infoInitial });
-});
-
-test("Test Skill action", () => {
-    const text = "> You try to use scavenging to find resources.";
-    expect(tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial))
-    .toStrictEqual({ state: stateInitial, text: text, history: historyInitial, storyCards: storyCardsInitial, info: infoInitial });
-});
-
-test("Test default action", () => {
-    const text = "> You try to move the rock.";
-    expect(tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial))
-    .toStrictEqual({ state: stateInitial, text: text, history: historyInitial, storyCards: storyCardsInitial, info: infoInitial });
-});
-
-test("Test speech action", () => {
-    const text = "> You say \"Some words you say.\"";
-    expect(tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial))
-    .toStrictEqual({ state: stateInitial, text: text, history: historyInitial, storyCards: storyCardsInitial, info: infoInitial });
-});
 
 const state = {
     key: "value",
@@ -336,21 +310,82 @@ const info = {
 
 test("Test Fighting action", () => {
     const text = "> You try to use fighting to defend yourself.";
-    const results = tester(state, text, history, storyCards, info);
-    expect(results).toStrictEqual({ state: state, text: text, history: history, storyCards: storyCards, info: info });
+    const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
+    expect(results.state).toBe(stateInitial);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(historyInitial);
+    expect(results.storyCards).toBe(storyCardsInitial);
+    expect(results.info).toBe(infoInitial);
 });
 
 test("Test Skill action", () => {
     const text = "> You try to use scavenging to find resources.";
-    expect(tester(state, text, history, storyCards, info)).toStrictEqual({ state: state, text: text, history: history, storyCards: storyCards, info: info });
+    const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
+    expect(results.state).toBe(stateInitial);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(historyInitial);
+    expect(results.storyCards).toBe(storyCardsInitial);
+    expect(results.info).toBe(infoInitial);
 });
 
 test("Test default action", () => {
     const text = "> You try to move the rock.";
-    expect(tester(state, text, history, storyCards, info)).toStrictEqual({ state: state, text: text, history: history, storyCards: storyCards, info: info });
+    const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
+    expect(results.state).toBe(stateInitial);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(historyInitial);
+    expect(results.storyCards).toBe(storyCardsInitial);
+    expect(results.info).toBe(infoInitial);
 });
 
 test("Test speech action", () => {
     const text = "> You say \"Some words you say.\"";
-    expect(tester(state, text, history, storyCards, info)).toStrictEqual({ state: state, text: text, history: history, storyCards: storyCards, info: info });
+    const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
+    expect(results.state).toBe(stateInitial);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(historyInitial);
+    expect(results.storyCards).toBe(storyCardsInitial);
+    expect(results.info).toBe(infoInitial);
+});
+
+// Testing post init of data
+
+test("Test Fighting action post init", () => {
+    const text = "> You try to use fighting to defend yourself.";
+    const results = tester(state, text, history, storyCards, info);
+    expect(results.state).toStrictEqual(state);
+    expect(results.text).toStrictEqual(text);
+    expect(results.history).toStrictEqual(history);
+    expect(results.storyCards).toStrictEqual(storyCards);
+    expect(results.info).toStrictEqual(info);
+});
+
+test("Test Skill action post init", () => {
+    const text = "> You try to use scavenging to find resources.";
+    const results = tester(state, text, history, storyCards, info);
+    expect(results.state).toBe(state);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(history);
+    expect(results.storyCards).toBe(storyCards);
+    expect(results.info).toBe(info);
+});
+
+test("Test default action post init", () => {
+    const text = "> You try to move the rock.";
+    const results = tester(state, text, history, storyCards, info);
+    expect(results.state).toBe(state);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(history);
+    expect(results.storyCards).toBe(storyCards);
+    expect(results.info).toBe(info);
+});
+
+test("Test speech action post init", () => {
+    const text = "> You say \"Some words you say.\"";
+    const results = tester(state, text, history, storyCards, info);
+    expect(results.state).toBe(state);
+    expect(results.text).toBe(text);
+    expect(results.history).toBe(history);
+    expect(results.storyCards).toBe(storyCards);
+    expect(results.info).toBe(info);
 });
