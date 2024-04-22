@@ -1,1 +1,1 @@
-Oracle is a game egnine for AID sciprting.
+# Oracle is a game engine for AI Dungeon scripting.

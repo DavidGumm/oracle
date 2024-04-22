@@ -1,12 +1,51 @@
 // Every script needs a modifier function
 const modifier = (text) => {
     const oracle = (state, text, history, storyCards, info) => {
-        const STARTING_ACTION_RATE = 0.3
-        const STARTING_ACTION_MAX_BONUS_RATE = 0.1
-        const STARTING_ACTION_MIN_BONUS_RATE = 0.01
-        const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE)
-        const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse]\n[Tone: Grim, Dark]\n[Style: Gritty, Evocative, Fast Zombies]"
-        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = true;
+        const STARTING_ACTION_RATE = 0.3;
+        const STARTING_ACTION_MAX_BONUS_RATE = 0.1;
+        const STARTING_ACTION_MIN_BONUS_RATE = 0.01;
+        const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE);
+        const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]";
+        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = false;
+        const ENABLE_DYNAMIC_ENVIRONMENT_SYSTEM = true;
+
+        class Environment {
+            constructor(chance, description) {
+                // The chance this can be the environment
+                this.chance = chance;
+                // The description of the environment to be presented to the AI.
+                this.description = description;
+            }
+        }
+
+        class EnvironmentalStatus {
+            constructor(
+                // The name or id to use to find the environmental status .
+                name,
+                // The array of environmental status.
+                environments,
+                // The overall chance the environmental status can change.
+                chance
+            ) {
+                this.name = name;
+                this.environments = environments;
+                this.chance = chance;
+                this.current = getRandomItem(environments);
+                this.description = this.current.description;
+            }
+            change() {
+                if (Math.random() < this.chance) {
+                    const random = Math.random();
+                    this.environments.every(e => {
+                        if (random < e.chance) {
+                            this.current = e;
+                            this.description = e.description;
+                            return false;
+                        }
+                    });
+                }
+            }
+        }
 
         class Exhaustion {
             constructor(
@@ -172,7 +211,18 @@ const modifier = (text) => {
                 "You're too flustered to speak clearly!",
                 defaultActionRate(),
                 new Leveling(),
-                new CoolDown()
+                {
+                    // Enables the action cool down system
+                    enabled: true,
+                    // How quick the cool down rate goes down per player turn
+                    decreaseRatePerAction: 1,
+                    // The failure threshold for when to cool down actions
+                    failureThreshold: 3,
+                    // The current count
+                    failureCount: 0,
+                    // The remaining Cool down turns
+                    remainingTurns: 3
+                }
             ),// START action change section.
             new Action(
                 ["fighting", "combat", "weapon"],
@@ -245,6 +295,19 @@ const modifier = (text) => {
             // Player activity
             playerActivity = new PlayerActivity();
             dynamicActions = ENABLE_DYNAMIC_ACTIONS_SYSTEM;
+            environmentalStatus = [
+                new EnvironmentalStatus(
+                    "The weather.",
+                    [
+                        new Environment(.05, "It is thundering outside."),
+                        new Environment(.1, "There are clouds and precipitation outside."),
+                        new Environment(.15, "There are clouds outside."),
+                        new Environment(.25, "There is a thick fog outside."),
+                        new Environment(1, "It is clear outside."),
+                    ],
+                    0.1
+                )
+            ]
         };
 
         // Helper functions
@@ -348,6 +411,7 @@ const modifier = (text) => {
         const actionParse = (text) => {
             const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
             const match = text.match(actionRegex);
+            state.game.environmentalStatus.forEach(e => e.change());
             if (match) {
                 let action;
                 if (match[2]) {  // If action name is captured
@@ -399,6 +463,13 @@ const modifier = (text) => {
             }
         }
 
+        const getEnvironmentalStatus = () => {
+            if (ENABLE_DYNAMIC_ENVIRONMENT_SYSTEM) {
+                return state.game.environmentalStatus.map(e => e.description);
+            }
+            return [];
+        }
+
         const suddenly = () => {
             if (!state.game.playerActivity.threat.enabled) return "";
             const activity = Math.max(state.game.playerActivity.threat.active, state.game.playerActivity.threat.inactive);
@@ -409,10 +480,7 @@ const modifier = (text) => {
             return "";
         }
 
-        const authorsNoteManager = (notes) => {
-            const note = notes.join(" ").trim();
-            return note + AUTHORS_NOTES;
-        }
+        const authorsNoteManager = (notes) => (notes.join(" ").trim() + " " + AUTHORS_NOTES).trim();
 
         /**
          * Gets the players status.
@@ -426,9 +494,9 @@ const modifier = (text) => {
                 .join(" ")
                 .trim();
             if (status.length > 0) {
-                return `[Your status: [${status}]]`;
+                return `[Your status: ${status}]`;
             }
-            return `[Your status: []]`;
+            return "";
         }
 
         /**
@@ -455,18 +523,20 @@ const modifier = (text) => {
         if (!state.game) {
             state.game = new Game();
         }
-        // Ensure state.message is blank and ready.
-        state.message = "";
-
         // Ensure state.memory.authorsNote is blank and ready.
         if (!state.memory.authorsNote) {
             state.memory.authorsNote = "";
         }
+        // Ensure state.message is blank and ready.
+        state.message = "";
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
         actionParse(text);
 
-        state.memory.authorsNote = authorsNoteManager([getPlayerStatus()]);
+        state.memory.authorsNote = authorsNoteManager([
+            getPlayerStatus(),
+            [...getEnvironmentalStatus()]
+        ]);
 
         // Notify the player of the status.
         state.message += getPlayerStatusMessage();

@@ -1,11 +1,50 @@
 const tester = (state, text, history, storyCards, info) => {
     const oracle = (state, text, history, storyCards, info) => {
-        const STARTING_ACTION_RATE = 0.3
-        const STARTING_ACTION_MAX_BONUS_RATE = 0.1
-        const STARTING_ACTION_MIN_BONUS_RATE = 0.01
-        const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE)
-        const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse]\n[Tone: Grim, Dark]\n[Style: Gritty, Evocative, Fast Zombies]"
-        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = true;
+        const STARTING_ACTION_RATE = 0.4;
+        const STARTING_ACTION_MAX_BONUS_RATE = 0.2;
+        const STARTING_ACTION_MIN_BONUS_RATE = 0.01;
+        const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE);
+        const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]";
+        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = false;
+        const ENABLE_DYNAMIC_EVENT_SYSTEM = true;
+
+        class Event {
+            constructor(chance, description) {
+                // The chance this can be the event
+                this.chance = chance;
+                // The description of the event to be presented to the AI
+                this.description = description;
+            }
+        }
+
+        class EventSystem {
+            constructor(
+                // The name or id to use to find the event status
+                name,
+                // The array of event status.
+                events,
+                // The overall chance the event can change
+                chance
+            ){
+                this.name = name;
+                this.events = events;
+                this.chance = chance;
+                this.current = getRandomItem(events);
+                this.description = this.current.description;
+            }
+            change() {
+                if (Math.random() < this.chance) {
+                    const random = Math.random();
+                    this.events.every(e => {
+                        if (random < e.chance) {
+                            this.current = e;
+                            this.description = e.description;
+                            return false;
+                        }
+                    });
+                }
+            }
+        }
 
         class Exhaustion {
             constructor(
@@ -35,9 +74,9 @@ const tester = (state, text, history, storyCards, info) => {
                 threshold = 3,
                 // The current count of active turns
                 active = 3,
-                // The current count of inactive turns.
+                // The current count of inactive turns
                 inactive = 3,
-                // The outcomes you might encounter for player inaction.
+                // The outcomes you might encounter for player inaction
                 array = [
                     "You can barely hear something.",
                     "You saw something on the edge of your vision.",
@@ -164,7 +203,7 @@ const tester = (state, text, history, storyCards, info) => {
             ),
             new Action(
                 ["speech", "charisma", "diplomacy"],
-                ["persuasive", "charming", "convincing"],
+                ["persuasive","charming","convincing"],
                 ["awkward", "unconvincing", "ineffectual"],
                 "You speak with",
                 "You try to be persuasive, but your words are",
@@ -174,12 +213,23 @@ const tester = (state, text, history, storyCards, info) => {
                 new CoolDown()
             ),// START action change section.
             new Action(
-                ["fighting", "combat", "weapon"],
+                ["fighting","combat","weapon"],
                 ["brutal efficiency", "deadly precision", "unyielding resolve"],
                 ["misjudged", "ineffective", "reckless"],
                 "You attack with",
                 "Your attack proves",
                 "You could die!",
+                defaultActionRate(),
+                new Leveling(),
+                new CoolDown()
+            ),
+            new Action(
+                ["movement","move","running","jumping","dodge"],
+                ["agile", "graceful", "fluid"],
+                ["unprepared", "reckless", "awkward"],
+                "Your movement is successfully and",
+                "Your attempt to move was",
+                "You can't move anymore!",
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
@@ -207,18 +257,6 @@ const tester = (state, text, history, storyCards, info) => {
                 new CoolDown()
             ),
             new Action(
-                ["resistance"],
-                ["hardening your resolve", "precise control over your abilities", "effective use of your powers"],
-                ["disgusting", "vile", "corrupted"],
-                "You fight off the mutation with",
-                "Your resistance falters, becoming more",
-                "Something inside feels terribly wrong.",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown(),
-                "is a mutant power."
-            ),
-            new Action(
                 ["first aid"],
                 ["lifesaving actions", "precise techniques", "effective treatments"],
                 ["ineffective", "clumsy", "detrimental"],
@@ -244,6 +282,27 @@ const tester = (state, text, history, storyCards, info) => {
             // Player activity
             playerActivity = new PlayerActivity();
             dynamicActions = ENABLE_DYNAMIC_ACTIONS_SYSTEM;
+            eventSystem = [
+                new EventSystem(
+                    "The weather.",
+                    [
+                        new Event(.05, "It is thundering outside."),
+                        new Event(.1, "There are clouds and precipitation outside."),
+                        new Event(.15, "There are clouds outside."),
+                        new Event(.25, "There is a thick fog outside."),
+                        new Event(1, "It is clear outside."),
+                    ],
+                    0.1
+                ),
+                new EventSystem(
+                    "Blood Moon",
+                    [
+                        new Event(.5, "Suddenly a zombie appears!"),
+                        new Event(1, ""),
+                    ],
+                    0.1
+                )
+            ]
         };
 
         // Helper functions
@@ -347,6 +406,7 @@ const tester = (state, text, history, storyCards, info) => {
         const actionParse = (text) => {
             const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
             const match = text.match(actionRegex);
+            state.game.eventSystem.forEach(e => e.change());
             if (match) {
                 let action;
                 if (match[2]) {  // If action name is captured
@@ -398,6 +458,13 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
+        const getEventSystem = () => {
+            if (ENABLE_DYNAMIC_EVENT_SYSTEM) {
+                return state.game.eventSystem.map(e => e.description);
+            }
+            return [];
+        }
+
         const suddenly = () => {
             if (!state.game.playerActivity.threat.enabled) return "";
             const activity = Math.max(state.game.playerActivity.threat.active, state.game.playerActivity.threat.inactive);
@@ -408,10 +475,7 @@ const tester = (state, text, history, storyCards, info) => {
             return "";
         }
 
-        const authorsNoteManager = (notes) => {
-            const note = notes.join(" ").trim();
-            return note + AUTHORS_NOTES;
-        }
+        const authorsNoteManager = (notes) => (notes.join(" ").trim() + " " + AUTHORS_NOTES).trim();
 
         /**
          * Gets the players status.
@@ -425,9 +489,9 @@ const tester = (state, text, history, storyCards, info) => {
                 .join(" ")
                 .trim();
             if (status.length > 0) {
-                return `[Your status: [${status}]]`;
+                return `[Your status: ${status}]`;
             }
-            return `[Your status: []]`;
+            return "";
         }
 
         /**
@@ -454,26 +518,27 @@ const tester = (state, text, history, storyCards, info) => {
         if (!state.game) {
             state.game = new Game();
         }
-        // Ensure state.message is blank and ready.
-        state.message = "";
-
         // Ensure state.memory.authorsNote is blank and ready.
         if (!state.memory.authorsNote) {
             state.memory.authorsNote = "";
         }
+        // Ensure state.message is blank and ready.
+        state.message = "";
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
         actionParse(text);
 
-        state.memory.authorsNote = authorsNoteManager([getPlayerStatus()]);
+        state.memory.authorsNote = authorsNoteManager([
+            getPlayerStatus(),
+            ...getEventSystem()
+        ]);
 
         // Notify the player of the status.
         state.message += getPlayerStatusMessage();
     }
     oracle(state, text, history, storyCards, info);
 
-    const test = { state, text, history, storyCards, info };
-    return test
+    return { state, text, history, storyCards, info }
 }
 
 module.exports = tester;
