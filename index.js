@@ -8,7 +8,7 @@ const tester = (state, text, history, storyCards, info) => {
      * "> You try to move the rock."
      * "> You say \"Some words you say.\""
      */
-    const modifier = (text) => {
+    const oracle = (state, text, history, storyCards, info) => {
         const STARTING_ACTION_RATE = 0.3
         const STARTING_ACTION_MAX_BONUS_RATE = 0.1
         const STARTING_ACTION_MIN_BONUS_RATE = 0.01
@@ -177,7 +177,7 @@ const tester = (state, text, history, storyCards, info) => {
                 ["misjudged", "ineffective", "reckless"],
                 "You attack with",
                 "Your attack proves",
-                "You have no fight left in you!",
+                "You could die!",
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
@@ -437,37 +437,31 @@ const tester = (state, text, history, storyCards, info) => {
             }
             return "";
         }
-
-        const oracle = (text) => {
-            // Check if player state exists, if not, initialize
-            if (!state.player) {
-                state.player = {
-                    status: "",
-                    actions: ACTIONS
-                }
+        // Check if player state exists, if not, initialize
+        if (!state.player) {
+            state.player = {
+                status: "",
+                actions: ACTIONS
             }
-            if (!state.game) {
-                state.game = new Game();
-            }
-            // Ensure state.message is blank and ready.
-            if (!state.message) {
-                state.message = "";
-            }
-
-            // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
-            actionParse(text);
-
-            authorsNoteManager([getPlayerStatus()]);
-            // Notify the player of the status.
-            state.message = getPlayerStatusMessage();
         }
-        oracle(text)
-        return { text: text }
+        if (!state.game) {
+            state.game = new Game();
+        }
+        // Ensure state.message is blank and ready.
+        if (!state.message) {
+            state.message = "";
+        }
+
+        // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
+        actionParse(text);
+
+        authorsNoteManager([getPlayerStatus()]);
+        // Notify the player of the status.
+        state.message = getPlayerStatusMessage();
     }
 
-    // Don't modify this part
-    modifier(text)
-    
+    oracle(state, text, history, storyCards, info)
+
     const test = { state, text, history, storyCards, info };
     return test
 }

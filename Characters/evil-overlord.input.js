@@ -8,18 +8,18 @@ const modifier = (text) => {/**
      * "> You say \"Some words you say.\""
      */
     const oracle = (state, text, history, storyCards, info) => {
-        const STARTING_ACTION_RATE = 0.3
+        const STARTING_ACTION_RATE = 0.5
         const STARTING_ACTION_MAX_BONUS_RATE = 0.1
         const STARTING_ACTION_MIN_BONUS_RATE = 0.01
         const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE)
-        const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse]\n[Tone: Grim, Dark]\n[Style: Gritty, Evocative, Fast Zombies]"
+        const AUTHORS_NOTES = "[Setting: Lord of the Rings]\n[Tone: Epic, Morally Complex]\n[Style: Descriptive, Immersive]"
 
         class Exhaustion {
             constructor(
                 // Enables the exhaustion system
                 enabled = true,
                 // Player exhaustion status threshold
-                threshold = 5,
+                threshold = 9,
                 // Starting value for for inactive turns counter
                 inactive = 0,
                 // Starting value for for active turns counter
@@ -68,13 +68,13 @@ const modifier = (text) => {/**
                 // The actions maximum rate
                 maxRate = .95,
                 // The actions minimum rate
-                minRate = .3,
+                minRate = .5,
                 // The base rate of action change
-                rateOfChange = 0.001,
+                rateOfChange = 0.01,
                 // The experience failure multiplier
                 rateOfChangeFailureMultiplier = 10,
                 // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
-                decreaseRate = 0.001 / 6) {
+                decreaseRate = 0.001) {
                 this.increaseEnabled = increaseEnabled;
                 this.decreaseEnabled = decreaseEnabled;
                 this.maxRate = maxRate;
@@ -92,7 +92,7 @@ const modifier = (text) => {/**
                 // How quick the cool down rate goes down per player turn
                 decreaseRatePerAction = 1,
                 // The failure threshold for when to cool down actions
-                failureThreshold = 3,
+                failureThreshold = 5,
                 // The current count
                 failureCount = 0,
                 // The remaining Cool down turns
@@ -113,22 +113,29 @@ const modifier = (text) => {/**
                 this.successStart = successStart;
                 this.failureStart = failureStart;
                 this.coolDownPhrase = coolDownPhrase;
-                this.note = note;
                 this.rate = rate;
                 this.leveling = leveling;
                 this.coolDown = coolDown;
+                this.note = note;
             }
         }
 
         //Set default Actions
         const ACTIONS = [
             new Action(
+                // List of matching names
                 ["default"],
-                ["masterful", "remarkable", "flawless"],
-                ["clumsy", "inept", "futile"],
-                "Successfully, you manage to be",
-                "Despite your efforts, you end up being",
-                "You are unable to!",
+                // Success adjectives
+                ["malevolent", "domineering", "tyrannical"],
+                // Failure adjectives
+                ["feeble", "pitiful", "ineffectual"],
+                // Success statement
+                "With cruel authority, you impose your will and manage to be",
+                // Failure statement
+                "Your attempt to assert dominance proves",
+                // Exhaustion statement / status
+                "Your dark powers wane!",
+                // Starting rate
                 STARTING_ACTION_RATE + STARTING_ACTION_MAX_BONUS_RATE,
                 {
                     // Allow action increase?
@@ -160,78 +167,99 @@ const modifier = (text) => {/**
                 }
             ),
             new Action(
-                ["speech", "charisma", "diplomacy"],
-                ["persuasive", "charming", "convincing"],
-                ["awkward", "unconvincing", "ineffectual"],
-                "You speak with",
-                "You try to be persuasive, but your words are",
-                "You're too flustered to speak clearly!",
+                // List of matching names
+                ["speech", "charisma", "diplomacy", "command"],
+                // Success adjectives
+                ["intimidating", "domineering", "imperious"],
+                // Failure adjectives
+                ["meek", "unconvincing", "ineffectual"],
+                // Success statement
+                "With a dark and commanding presence, you speak and are",
+                // Failure statement
+                "Your attempt to intimidate is",
+                // Exhaustion statement / status
+                "You struggle to muster an intimidating presence!",
+                // Starting rate
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
-            ),// START action change section.
+            ),
             new Action(
+                // List of matching names
                 ["fighting", "combat", "weapon"],
-                ["brutal efficiency", "deadly precision", "unyielding resolve"],
-                ["misjudged", "ineffective", "reckless"],
-                "You attack with",
-                "Your attack proves",
-                "You have no fight left in you!",
+                // Success adjectives
+                ["merciless", "ruthless", "unstoppable"],
+                // Failure adjectives
+                ["clumsy", "ineffective", "weak"],
+                // Success statement
+                "You unleash a brutal attack with",
+                // Failure statement
+                "Your assault proves",
+                // Exhaustion statement / status
+                "Your dark powers fail you in combat!",
+                // Starting rate
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
             ),
             new Action(
-                ["scavenging"],
-                ["find valuable resources", "uncover useful supplies", "discover essential items"],
-                ["unprepared", "inadequate", "perilous"],
-                "You scavenge successfully and",
-                "Your attempt to scavenge is deemed",
-                "You can't locate things to scavenge.",
+                // List of matching names
+                ["build", "craft", "create"],
+                // Success adjectives
+                ["masterful", "skillful", "ingenious"],
+                // Failure adjectives
+                ["shoddy", "flimsy", "amateurish"],
+                // Success statement
+                "You channel your dark powers into crafting and create something",
+                // Failure statement
+                "Your attempt to craft proves",
+                // Exhaustion statement / status
+                "The dark energies needed for crafting elude you!",
+                // Starting rate
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
             ),
             new Action(
-                ["stealth"],
-                ["silent steps", "ghost-like silence", "undetectable movements"],
-                ["clumsy", "exposed", "detected"],
-                "You move with",
-                "Your attempt to move stealthily fails; you are",
-                "You are being conspicuous.",
+                // List of matching names
+                ["magic", "dark magic", "necromancy"],
+                // Success adjectives
+                ["sinister", "malefic", "corrupting"],
+                // Failure adjectives
+                ["impotent", "feeble", "fruitless"],
+                // Success statement
+                "You weave a twisted spell with",
+                // Failure statement 
+                "Your attempt at dark magic is",
+                // Exhaustion statement / status
+                "Your unholy powers desert you!",
+                // Starting rate
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
             ),
             new Action(
-                ["resistance"],
-                ["hardening your resolve", "precise control over your abilities", "effective use of your powers"],
-                ["disgusting", "vile", "corrupted"],
-                "You fight off the mutation with",
-                "Your resistance falters, becoming more",
-                "Something inside feels terribly wrong.",
+                // List of matching names
+                ["corrupt", "taint", "defile"],
+                // Success adjectives
+                ["insidious", "poisonous", "profane"],
+                // Failure adjectives
+                ["ineffective", "fruitless", "impotent"],
+                // Success statement
+                "Your malign influence corrodes all it touches in an",
+                // Failure statement
+                "Your attempt at corruption proves",
+                // Exhaustion statement
+                "Your powers of defilement wane!",
+                // Starting rate
                 defaultActionRate(),
                 new Leveling(),
-                new CoolDown(),
-                "is a mutant power."
-            ),
-            new Action(
-                ["first aid"],
-                ["lifesaving actions", "precise techniques", "effective treatments"],
-                ["ineffective", "clumsy", "detrimental"],
-                "You administer first aid with",
-                "Your attempt at first aid is",
-                "Your medical supplies are running dangerously low.",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown(),
-                "You used vital supplies for your first-aid attempt."
-            )// End action change section.
+                new CoolDown()
+            )
         ];
 
         // DO NOT MODIFY SCRIPT BELOW THIS LINE.
         // HERE THEIR BE MONSTERS!
-
         class PlayerActivity {
             exhaustion = new Exhaustion();
             threat = new Threat();
