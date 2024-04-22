@@ -1,18 +1,11 @@
-const modifier = (text) => {/**
-     * Every script needs a modifier function
-     * Tests:
-     * "> You try to use fighting to defend yourself."
-     * "> You try to use first aid to heal yourself."
-     * "> You try to use scavenging to find resources."
-     * "> You try to move the rock."
-     * "> You say \"Some words you say.\""
-     */
+const tester = (state, text, history, storyCards, info) => {
     const oracle = (state, text, history, storyCards, info) => {
         const STARTING_ACTION_RATE = 0.3
         const STARTING_ACTION_MAX_BONUS_RATE = 0.1
         const STARTING_ACTION_MIN_BONUS_RATE = 0.01
         const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE)
         const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse]\n[Tone: Grim, Dark]\n[Style: Gritty, Evocative, Fast Zombies]"
+        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = false;
 
         class Exhaustion {
             constructor(
@@ -176,7 +169,7 @@ const modifier = (text) => {/**
                 ["misjudged", "ineffective", "reckless"],
                 "You attack with",
                 "Your attack proves",
-                "You have no fight left in you!",
+                "You could die!",
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
@@ -240,11 +233,29 @@ const modifier = (text) => {/**
         class Game {
             // Player activity
             playerActivity = new PlayerActivity();
+            dynamicActions = ENABLE_DYNAMIC_ACTIONS_SYSTEM;
         };
 
         // Helper functions
         const getRandomItem = array => array[Math.floor(Math.random() * array.length)];
-        const getActionByName = name => state.player.actions.find(action => action.name.includes(name.toLowerCase())) || state.player.actions[0];
+
+        const getActionByName = name => {
+            if(state.game.dynamicActions) {
+                let skill = state.player.skills.find(skill => skill.name.toLowerCase() === name.toLowerCase());
+                if (!skill) {
+                    // If skill does not exist, create it with default attributes.
+                    skill = {
+                        name: name.toLowerCase(),
+                        rate: 0.5,  // Default rate
+                        success: ["masterful", "remarkable", "flawless"],  // Default success adjectives
+                        failure: ["clumsy", "inept", "futile"]  // Default failure adjectives
+                    };
+                    state.player.skills.push(skill);  // Add the new skill to the skills array
+                }
+                return skill;
+            }
+            return state.player.actions.find(action => action.name.includes(name.toLowerCase())) || state.player.actions[0];
+        }
 
         // Adjust a action's success rate dynamically based on outcome
         const setActionState = (action, isSuccess) => {
@@ -392,7 +403,7 @@ const modifier = (text) => {/**
 
         const authorsNoteManager = (notes) => {
             const note = notes.join(" ").trim();
-            state.memory.authorsNote = note + AUTHORS_NOTES;
+            return note + AUTHORS_NOTES;
         }
 
         /**
@@ -400,7 +411,10 @@ const modifier = (text) => {/**
          * @returns The status.
          */
         const getPlayerStatus = () => {
-            const status = [getStatus().map(a => a.coolDownPhrase), suddenly()]
+            const status = [
+                state.player.actions.filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0).map(a => a.coolDownPhrase),
+                state.player.status,
+                suddenly()]
                 .join(" ")
                 .trim();
             if (status.length > 0) {
@@ -410,28 +424,15 @@ const modifier = (text) => {/**
         }
 
         /**
-         * Gets an array of actions on cool down.
-         * @returns an array of actions on cool down.
-         */
-        const getStatus = () => {
-            let actions = state.player.actions.filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0);
-            if (state.player.status.length > 0) {
-                actions.push(state.player.status);
-            }
-            return actions;
-        };
-
-        /**
          * Gets the players status for the message.
          * @returns The status.
          */
         const getPlayerStatusMessage = () => {
-            const status =
-                getStatus()
+            const status = state.player.actions.filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0)
                     .map(a => `${a.name[0]} is cooling down for ${a.coolDown.remainingTurns} turns. Causing: "${a.coolDownPhrase}"`)
                     .join("\n")
                     .trim();
-            if (status.length > 0) {
+            if (status !== "") {
                 return status;
             }
             return "";
@@ -447,21 +448,26 @@ const modifier = (text) => {/**
             state.game = new Game();
         }
         // Ensure state.message is blank and ready.
-        if (!state.message) {
-            state.message = "";
+        state.message = "";
+
+        // Ensure state.memory.authorsNote is blank and ready.
+        if (!state.memory.authorsNote) {
+            state.memory.authorsNote = "";
         }
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
         actionParse(text);
 
-        authorsNoteManager([getPlayerStatus()]);
+        state.memory.authorsNote = authorsNoteManager([getPlayerStatus()]);
+
         // Notify the player of the status.
-        state.message = getPlayerStatusMessage();
+        state.message += getPlayerStatusMessage();
     }
 
-    oracle(state, text, history, storyCards, info)
-    return { text: text }
+    oracle(state, text, history, storyCards, info);
+
+    const test = { state, text, history, storyCards, info };
+    return test
 }
 
-// Don't modify this part
-modifier(text)
+module.exports = tester;

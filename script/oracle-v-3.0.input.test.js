@@ -1,4 +1,4 @@
-const tester = require("./index");
+const tester = require("./oracle-v-3.0.input");
 
 const stateInitial = {
     key: "value",
@@ -284,7 +284,7 @@ const state = {
                     "decreaseRatePerAction": 1,
                     "failureThreshold": 3,
                     "failureCount": 0,
-                    "remainingTurns": 0
+                    "remainingTurns": 3
                 }
             }
         ]
@@ -311,41 +311,41 @@ const info = {
 test("Test Fighting action", () => {
     const text = "> You try to use fighting to defend yourself.";
     const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
-    expect(results.state).toBe(stateInitial);
+    expect(results.state).toMatchObject(stateInitial);
     expect(results.text).toBe(text);
-    expect(results.history).toBe(historyInitial);
-    expect(results.storyCards).toBe(storyCardsInitial);
-    expect(results.info).toBe(infoInitial);
+    expect(results.history).toMatchObject(historyInitial);
+    expect(results.storyCards).toMatchObject(storyCardsInitial);
+    expect(results.info).toMatchObject(infoInitial);
 });
 
 test("Test Skill action", () => {
     const text = "> You try to use scavenging to find resources.";
     const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
-    expect(results.state).toBe(stateInitial);
+    expect(results.state).toMatchObject(stateInitial);
     expect(results.text).toBe(text);
-    expect(results.history).toBe(historyInitial);
-    expect(results.storyCards).toBe(storyCardsInitial);
-    expect(results.info).toBe(infoInitial);
+    expect(results.history).toMatchObject(historyInitial);
+    expect(results.storyCards).toMatchObject(storyCardsInitial);
+    expect(results.info).toMatchObject(infoInitial);
 });
 
 test("Test default action", () => {
     const text = "> You try to move the rock.";
     const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
-    expect(results.state).toBe(stateInitial);
+    expect(results.state).toMatchObject(stateInitial);
     expect(results.text).toBe(text);
-    expect(results.history).toBe(historyInitial);
-    expect(results.storyCards).toBe(storyCardsInitial);
-    expect(results.info).toBe(infoInitial);
+    expect(results.history).toMatchObject(historyInitial);
+    expect(results.storyCards).toMatchObject(storyCardsInitial);
+    expect(results.info).toMatchObject(infoInitial);
 });
 
 test("Test speech action", () => {
     const text = "> You say \"Some words you say.\"";
     const results = tester(stateInitial, text, historyInitial, storyCardsInitial, infoInitial);
-    expect(results.state).toBe(stateInitial);
+    expect(results.state).toMatchObject(stateInitial);
     expect(results.text).toBe(text);
-    expect(results.history).toBe(historyInitial);
-    expect(results.storyCards).toBe(storyCardsInitial);
-    expect(results.info).toBe(infoInitial);
+    expect(results.history).toMatchObject(historyInitial);
+    expect(results.storyCards).toMatchObject(storyCardsInitial);
+    expect(results.info).toMatchObject(infoInitial);
 });
 
 // Testing post init of data
@@ -353,39 +353,40 @@ test("Test speech action", () => {
 test("Test Fighting action post init", () => {
     const text = "> You try to use fighting to defend yourself.";
     const results = tester(state, text, history, storyCards, info);
-    expect(results.state).toStrictEqual(state);
-    expect(results.text).toStrictEqual(text);
-    expect(results.history).toStrictEqual(history);
-    expect(results.storyCards).toStrictEqual(storyCards);
-    expect(results.info).toStrictEqual(info);
+    //expect(results.state).toMatchObject(state);
+    expect(results.state.message).toMatch(/Your fighting check (succeeded|failed).\nfirst aid is cooling down for 3 turns. Causing: "Your medical supplies are running dangerously low."/);
+    expect(results.history).toMatchObject(history);
+    expect(results.storyCards).toMatchObject(storyCards);
+    expect(results.info).toMatchObject(info);
 });
 
 test("Test Skill action post init", () => {
     const text = "> You try to use scavenging to find resources.";
     const results = tester(state, text, history, storyCards, info);
-    expect(results.state).toBe(state);
-    expect(results.text).toBe(text);
-    expect(results.history).toBe(history);
-    expect(results.storyCards).toBe(storyCards);
-    expect(results.info).toBe(info);
+    //expect(results.state).toMatchObject(state);
+    expect(results.state.message).toMatch(/Your scavenging check (succeeded|failed).\nfirst aid is cooling down for 3 turns. Causing: "Your medical supplies are running dangerously low."/);
+    expect(results.history).toMatchObject(history);
+    expect(results.storyCards).toMatchObject(storyCards);
+    expect(results.info).toMatchObject(info);
 });
 
 test("Test default action post init", () => {
     const text = "> You try to move the rock.";
     const results = tester(state, text, history, storyCards, info);
-    expect(results.state).toBe(state);
-    expect(results.text).toBe(text);
-    expect(results.history).toBe(history);
-    expect(results.storyCards).toBe(storyCards);
-    expect(results.info).toBe(info);
+    //expect(results.state).toMatchObject(state);
+    expect(results.state.message).toMatch(/Your default check (succeeded|failed).\nfirst aid is cooling down for 3 turns. Causing: "Your medical supplies are running dangerously low."/);
+    expect(results.history).toMatchObject(history);
+    expect(results.storyCards).toMatchObject(storyCards);
+    expect(results.info).toMatchObject(info);
 });
 
 test("Test speech action post init", () => {
     const text = "> You say \"Some words you say.\"";
     const results = tester(state, text, history, storyCards, info);
-    expect(results.state).toBe(state);
+    //expect(results.state).toMatchObject(state);
+    expect(results.state.message).toMatch(/Your speech check (succeeded|failed).\nfirst aid is cooling down for 3 turns. Causing: "Your medical supplies are running dangerously low."/);
     expect(results.text).toBe(text);
-    expect(results.history).toBe(history);
-    expect(results.storyCards).toBe(storyCards);
-    expect(results.info).toBe(info);
+    expect(results.history).toMatchObject(history);
+    expect(results.storyCards).toMatchObject(storyCards);
+    expect(results.info).toMatchObject(info);
 });
