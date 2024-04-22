@@ -1,4 +1,4 @@
-const tester = require("./oracle-v-3.0.input");
+const tester = require("./oracle-v-3.1.input");
 
 const stateInitial = {
     key: "value",
@@ -375,6 +375,17 @@ test("Test default action post init", () => {
     const results = tester(state, text, history, storyCards, info);
     //expect(results.state).toMatchObject(state);
     expect(results.state.message).toMatch(/Your default check (succeeded|failed).\nfirst aid is cooling down for 3 turns. Causing: "Your medical supplies are running dangerously low."/);
+    expect(results.history).toMatchObject(history);
+    expect(results.storyCards).toMatchObject(storyCards);
+    expect(results.info).toMatchObject(info);
+});
+
+test("Test add skill action post init", () => {
+    const text = "> You try to use racing to drive the car.";
+    const results = tester(state, text, history, storyCards, info);
+    //expect(results.state).toMatchObject(state);
+    expect(results.state.message).toMatch(/Your racing check (succeeded|failed).\nfirst aid is cooling down for 3 turns. Causing: "Your medical supplies are running dangerously low."/);
+    expect(results.text).toBe(text);
     expect(results.history).toMatchObject(history);
     expect(results.storyCards).toMatchObject(storyCards);
     expect(results.info).toMatchObject(info);

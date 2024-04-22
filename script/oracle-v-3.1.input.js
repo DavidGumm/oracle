@@ -5,7 +5,7 @@ const tester = (state, text, history, storyCards, info) => {
         const STARTING_ACTION_MIN_BONUS_RATE = 0.01
         const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE)
         const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse]\n[Tone: Grim, Dark]\n[Style: Gritty, Evocative, Fast Zombies]"
-        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = false;
+        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = true;
 
         class Exhaustion {
             constructor(
@@ -99,7 +99,17 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         class Action {
-            constructor(name, successEndings, failureEndings, successStart, failureStart, coolDownPhrase, rate, leveling, coolDown, note = "") {
+            constructor(
+                name = [],
+                successEndings = ["masterful", "remarkable", "flawless"],
+                failureEndings = ["clumsy", "inept", "futile"],
+                successStart = "Successfully, you manage to be",
+                failureStart = "Despite your efforts, you end up being",
+                coolDownPhrase = "You are unable to!",
+                rate = defaultActionRate(),
+                leveling = new Leveling(),
+                coolDown = new CoolDown(),
+                note = "") {
                 this.name = name.map(n => n.toLowerCase());
                 this.successEndings = successEndings;
                 this.failureEndings = failureEndings;
@@ -240,19 +250,16 @@ const tester = (state, text, history, storyCards, info) => {
         const getRandomItem = array => array[Math.floor(Math.random() * array.length)];
 
         const getActionByName = name => {
-            if(state.game.dynamicActions) {
-                let skill = state.player.skills.find(skill => skill.name.toLowerCase() === name.toLowerCase());
-                if (!skill) {
+            if (state.game.dynamicActions) {
+                let action = state.player.actions.find(action => action.name.includes(name.toLowerCase()));
+                if (!action) {
                     // If skill does not exist, create it with default attributes.
-                    skill = {
-                        name: name.toLowerCase(),
-                        rate: 0.5,  // Default rate
-                        success: ["masterful", "remarkable", "flawless"],  // Default success adjectives
-                        failure: ["clumsy", "inept", "futile"]  // Default failure adjectives
-                    };
-                    state.player.skills.push(skill);  // Add the new skill to the skills array
+                    let names = [];
+                    names.push(name.toLowerCase());
+                    const newAction = new Action(names);
+                    state.player.actions.push(newAction); // Add the new action to the actions array
                 }
-                return skill;
+                return state.player.actions.find(action => action.name.includes(name.toLowerCase()));
             }
             return state.player.actions.find(action => action.name.includes(name.toLowerCase())) || state.player.actions[0];
         }
@@ -463,7 +470,6 @@ const tester = (state, text, history, storyCards, info) => {
         // Notify the player of the status.
         state.message += getPlayerStatusMessage();
     }
-
     oracle(state, text, history, storyCards, info);
 
     const test = { state, text, history, storyCards, info };
