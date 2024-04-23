@@ -1,64 +1,91 @@
 // Every script needs a modifier function
 const modifier = (text) => {
     const oracle = (state, text, history, storyCards, info) => {
-        const STARTING_ACTION_RATE = 0.3;
-        const STARTING_ACTION_MAX_BONUS_RATE = 0.1;
-        const STARTING_ACTION_MIN_BONUS_RATE = 0.01;
-        const defaultActionRate = () => STARTING_ACTION_RATE + (Math.random() * (STARTING_ACTION_MIN_BONUS_RATE - STARTING_ACTION_MAX_BONUS_RATE) + STARTING_ACTION_MAX_BONUS_RATE);
-        const AUTHORS_NOTES = "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]";
-        const ENABLE_DYNAMIC_ACTIONS_SYSTEM = false;
-        const ENABLE_DYNAMIC_ENVIRONMENT_SYSTEM = true;
+        // Helper functions
+        const getRandomItem = arr => arr[Math.floor(Math.random() * arr.length)];
 
-        class Environment {
+        const getNextItem = (arr, currentIndex) => {
+            if (!arr.length) {
+                throw new Error('Array cannot be empty.');
+            }
+            // Ensure the currentIndex is within the array bounds
+            currentIndex = currentIndex % arr.length;
+            return arr[(currentIndex + 1) % arr.length];
+        }
+
+        class ActionRate {
+            /**
+             * The starting action rates.
+             * @param {number} starting The minimum value for an action.
+             * @param {number} MaxBonusRate The max starting bonus rate.
+             * @param {number} MinBonusRate The min starting bonus rate.
+             */
+            constructor(starting, MaxBonusRate, MinBonusRate) {
+                this.starting = starting;
+                this.MaxBonusRate = MaxBonusRate;
+                this.MinBonusRate = MinBonusRate;
+            }
+            defaultActionRate() {
+                return this.starting + (Math.random() * (this.MinBonusRate - this.MaxBonusRate) + this.MaxBonusRate)
+            }
+        }
+
+        /**
+         * The event for the event system.
+         * @param {number} chance The chance this can be the event
+         * @param {string} description The description of the event to be presented to the AI
+         */
+        class EventType {
             constructor(chance, description) {
-                // The chance this can be the environment
                 this.chance = chance;
-                // The description of the environment to be presented to the AI.
                 this.description = description;
             }
         }
 
-        class EnvironmentalStatus {
-            constructor(
-                // The name or id to use to find the environmental status .
-                name,
-                // The array of environmental status.
-                environments,
-                // The overall chance the environmental status can change.
-                chance
-            ) {
+        /**
+         * An event system.
+         * @param {string} name The name of id to find the event.
+         * @param {EventType} events An array of events posable in this scenario.
+         * @param {*} chance The likelihood of the event changing.
+         */
+        class EventSystem {
+            constructor(name, events, chance) {
                 this.name = name;
-                this.environments = environments;
+                this.events = events;
                 this.chance = chance;
-                this.current = getRandomItem(environments);
+                this.current = getRandomItem(events);
                 this.description = this.current.description;
+                this.isRandom = true
             }
             change() {
                 if (Math.random() < this.chance) {
-                    const random = Math.random();
-                    this.environments.every(e => {
-                        if (random < e.chance) {
-                            this.current = e;
-                            this.description = e.description;
-                            return false;
-                        }
-                    });
+                    if (this.isRandom) {
+
+                        const random = Math.random();
+                        this.events.every(e => {
+                            if (random < e.chance) {
+                                this.current = e;
+                                this.description = e.description;
+                                return false;
+                            }
+                        });
+                    } else {
+                        this.current = getNextItem(this.events, this.events.indexOf(e => e.description === this.current.description));
+                    }
                 }
             }
         }
 
+        /**
+         * The player exhaustion tracking system.
+         * @param {boolean} enabled If the system is active and in use.
+         * @param {number} threshold The threshold at which the system activates.
+         * @param {number} inactive Turns of inactivity.
+         * @param {number} active Turns of activity.
+         * @param {string} message The message to display when exhausted.
+         */
         class Exhaustion {
-            constructor(
-                // Enables the exhaustion system
-                enabled = true,
-                // Player exhaustion status threshold
-                threshold = 5,
-                // Starting value for for inactive turns counter
-                inactive = 0,
-                // Starting value for for active turns counter
-                active = 0,
-                // The message to display when the exhaustion threshold
-                message = "You are exhausted!") {
+            constructor(enabled, threshold, inactive, active, message) {
                 this.enabled = enabled;
                 this.threshold = threshold;
                 this.inactive = inactive;
@@ -67,22 +94,16 @@ const modifier = (text) => {
             }
         }
 
+        /**
+         * The threat system for use durning 'low' player activity. The system system is activated off a lack of player action over time.
+         * @param {boolean} enabled Enabled the player activity threat system
+         * @param {number} threshold The threshold to drop below before activating
+         * @param {number} active The current count of active turns
+         * @param {number} inactive The current count of inactive turns
+         * @param {string[]} array The outcomes you might encounter for player inaction
+         */
         class Threat {
-            constructor(
-                // Enabled the player activity threat system
-                enabled = true,
-                // The threshold to drop below before activating
-                threshold = 3,
-                // The current count of active turns
-                active = 3,
-                // The current count of inactive turns.
-                inactive = 3,
-                // The outcomes you might encounter for player inaction.
-                array = [
-                    "You can barely hear something.",
-                    "You saw something on the edge of your vision.",
-                    "You smell something but cannot make it out."
-                ]) {
+            constructor(enabled, threshold, active, inactive, array) {
                 this.enabled = enabled;
                 this.threshold = threshold;
                 this.active = active;
@@ -91,23 +112,18 @@ const modifier = (text) => {
             }
         }
 
-        //Actions
+        /**
+         * The leveling information for an action.
+         * @param {boolean} increaseEnabled Allow action increase
+         * @param {boolean} decreaseEnabled Allow action decrease
+         * @param {number} maxRate The actions maximum rate
+         * @param {number} minRate The actions minimum rate
+         * @param {number} rateOfChange The base rate of action change
+         * @param {number} rateOfChangeFailureMultiplier The experience failure multiplier
+         * @param {number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+         */
         class Leveling {
-            constructor(
-                // Allow action increase
-                increaseEnabled = true,
-                // Allow action decrease
-                decreaseEnabled = true,
-                // The actions maximum rate
-                maxRate = .95,
-                // The actions minimum rate
-                minRate = .3,
-                // The base rate of action change
-                rateOfChange = 0.001,
-                // The experience failure multiplier
-                rateOfChangeFailureMultiplier = 10,
-                // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
-                decreaseRate = 0.001 / 6) {
+            constructor(increaseEnabled, decreaseEnabled, maxRate, minRate, rateOfChange, rateOfChangeFailureMultiplier, decreaseRate) {
                 this.increaseEnabled = increaseEnabled;
                 this.decreaseEnabled = decreaseEnabled;
                 this.maxRate = maxRate;
@@ -118,18 +134,16 @@ const modifier = (text) => {
             }
         }
 
+        /**
+         * The actions cool down subsystem.
+         * @param {boolean} enabled Enables the action cool down system
+         * @param {number} decreaseRatePerAction How quick the cool down rate goes down per player turn
+         * @param {number} failureThreshold The failure threshold for when to cool down actions
+         * @param {number} failureCount The current count
+         * @param {number} remainingTurns The remaining Cool down turns
+         */
         class CoolDown {
-            constructor(
-                // Enables the action cool down system
-                enabled = true,
-                // How quick the cool down rate goes down per player turn
-                decreaseRatePerAction = 1,
-                // The failure threshold for when to cool down actions
-                failureThreshold = 3,
-                // The current count
-                failureCount = 0,
-                // The remaining Cool down turns
-                remainingTurns = 0) {
+            constructor(enabled, decreaseRatePerAction, failureThreshold, failureCount, remainingTurns) {
                 this.enabled = enabled;
                 this.decreaseRatePerAction = decreaseRatePerAction;
                 this.failureThreshold = failureThreshold;
@@ -137,6 +151,24 @@ const modifier = (text) => {
                 this.remainingTurns = remainingTurns;
             }
         }
+
+        const defaultActionLeveling = () => new Leveling(
+            increaseEnabled = true, // Allow action increase
+            decreaseEnabled = true, // Allow action decrease
+            maxRate = .95, // The actions maximum rate
+            minRate = .3, // The actions minimum rate
+            rateOfChange = 0.001, // The base rate of action change
+            rateOfChangeFailureMultiplier = 10, // The experience failure multiplier
+            decreaseRate = 0.001 / 6 // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+        );
+
+        const defaultActionCoolDown = () => new CoolDown(
+            true, //Enable the action cool down subsystem
+            1, // The rate of decrease per turn.
+            3, // The failure threshold at which to activate the cool down
+            0, // The current failure count.
+            0 // Turns remain on cool down.
+        );
 
         class Action {
             constructor(
@@ -146,7 +178,7 @@ const modifier = (text) => {
                 successStart = "Successfully, you manage to be",
                 failureStart = "Despite your efforts, you end up being",
                 coolDownPhrase = "You are unable to!",
-                rate = defaultActionRate(),
+                rate = 0,
                 leveling = new Leveling(),
                 coolDown = new CoolDown(),
                 note = "") {
@@ -163,155 +195,204 @@ const modifier = (text) => {
             }
         }
 
-        //Set default Actions
-        const ACTIONS = [
-            new Action(
-                ["default"],
-                ["masterful", "remarkable", "flawless"],
-                ["clumsy", "inept", "futile"],
-                "Successfully, you manage to be",
-                "Despite your efforts, you end up being",
-                "You are unable to!",
-                STARTING_ACTION_RATE + STARTING_ACTION_MAX_BONUS_RATE,
-                {
-                    // Allow action increase?
-                    increaseEnabled: false,
-                    // Allow action decrease?
-                    decreaseEnabled: false,
-                    // The actions maximum rate
-                    maxRate: STARTING_ACTION_RATE + STARTING_ACTION_MAX_BONUS_RATE,
-                    // The actions minimum rate
-                    minRate: STARTING_ACTION_RATE + STARTING_ACTION_MAX_BONUS_RATE,
-                    // The base rate of action change
-                    rateOfChange: 0,
-                    // The experience failure multiplier
-                    rateOfChangeFailureMultiplier: 1,
-                    // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
-                    decreaseRate: 0
-                },
-                {
-                    // Enables the action cool down system
-                    enabled: false,
-                    // How quick the cool down rate goes down per player turn
-                    decreaseRatePerAction: 1,
-                    // The failure threshold for when to cool down actions
-                    failureThreshold: 3,
-                    // The current count
-                    failureCount: 0,
-                    // The remaining Cool down turns
-                    remainingTurns: 0
-                }
-            ),
-            new Action(
-                ["speech", "charisma", "diplomacy"],
-                ["persuasive", "charming", "convincing"],
-                ["awkward", "unconvincing", "ineffectual"],
-                "You speak with",
-                "You try to be persuasive, but your words are",
-                "You're too flustered to speak clearly!",
-                defaultActionRate(),
-                new Leveling(),
-                {
-                    // Enables the action cool down system
-                    enabled: true,
-                    // How quick the cool down rate goes down per player turn
-                    decreaseRatePerAction: 1,
-                    // The failure threshold for when to cool down actions
-                    failureThreshold: 3,
-                    // The current count
-                    failureCount: 0,
-                    // The remaining Cool down turns
-                    remainingTurns: 3
-                }
-            ),// START action change section.
-            new Action(
-                ["fighting", "combat", "weapon"],
-                ["brutal efficiency", "deadly precision", "unyielding resolve"],
-                ["misjudged", "ineffective", "reckless"],
-                "You attack with",
-                "Your attack proves",
-                "You could die!",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown()
-            ),
-            new Action(
-                ["scavenging"],
-                ["find valuable resources", "uncover useful supplies", "discover essential items"],
-                ["unprepared", "inadequate", "perilous"],
-                "You scavenge successfully and",
-                "Your attempt to scavenge is deemed",
-                "You can't locate things to scavenge.",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown()
-            ),
-            new Action(
-                ["stealth"],
-                ["silent steps", "ghost-like silence", "undetectable movements"],
-                ["clumsy", "exposed", "detected"],
-                "You move with",
-                "Your attempt to move stealthily fails; you are",
-                "You are being conspicuous.",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown()
-            ),
-            new Action(
-                ["resistance"],
-                ["hardening your resolve", "precise control over your abilities", "effective use of your powers"],
-                ["disgusting", "vile", "corrupted"],
-                "You fight off the mutation with",
-                "Your resistance falters, becoming more",
-                "Something inside feels terribly wrong.",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown(),
-                "is a mutant power."
-            ),
-            new Action(
-                ["first aid"],
-                ["lifesaving actions", "precise techniques", "effective treatments"],
-                ["ineffective", "clumsy", "detrimental"],
-                "You administer first aid with",
-                "Your attempt at first aid is",
-                "Your medical supplies are running dangerously low.",
-                defaultActionRate(),
-                new Leveling(),
-                new CoolDown(),
-                "You used vital supplies for your first-aid attempt."
-            )// End action change section.
-        ];
-
-        // DO NOT MODIFY SCRIPT BELOW THIS LINE.
-        // HERE THEIR BE MONSTERS!
-
         class PlayerActivity {
-            exhaustion = new Exhaustion();
-            threat = new Threat();
+            constructor(exhaustion, threat) {
+                this.exhaustion = exhaustion;
+                this.threat = threat;
+            }
         }
 
         class Game {
-            // Player activity
-            playerActivity = new PlayerActivity();
-            dynamicActions = ENABLE_DYNAMIC_ACTIONS_SYSTEM;
-            environmentalStatus = [
-                new EnvironmentalStatus(
-                    "The weather.",
-                    [
-                        new Environment(.05, "It is thundering outside."),
-                        new Environment(.1, "There are clouds and precipitation outside."),
-                        new Environment(.15, "There are clouds outside."),
-                        new Environment(.25, "There is a thick fog outside."),
-                        new Environment(1, "It is clear outside."),
-                    ],
-                    0.1
-                )
-            ]
+            constructor(playerActivity, dynamicActions, eventSystem, eventSystemEnabled, authorsNote, ActionRate) {
+                this.playerActivity = playerActivity;
+                this.dynamicActions = dynamicActions;
+                this.eventSystem = eventSystem;
+                this.eventSystemEnabled = eventSystemEnabled;
+                this.authorsNote = authorsNote;
+                this.ActionRate = ActionRate;
+            }
         };
 
-        // Helper functions
-        const getRandomItem = array => array[Math.floor(Math.random() * array.length)];
+        const delphicBase = (state, text, history, storyCards, info) => {
+            if (!state.game) {
+                state.game = new Game(
+                    new PlayerActivity(
+                        new Exhaustion(
+                            true, // Enables the exhaustion system
+                            5, // Player exhaustion status threshold
+                            0, // Starting value for for inactive turns counter
+                            0, // Starting value for for active turns counter
+                            "You are exhausted!" // The message to display when the exhaustion threshold
+                        ),
+                        new Threat(
+                            true, // Enabled the player activity threat system
+                            3, // The threshold to drop below before activating
+                            3, // The current count of active turns
+                            3, // The current count of inactive turns,
+                            [
+                                "You can barely hear something.",
+                                "You saw something on the edge of your vision.",
+                                "You smell something but cannot make it out."
+                            ]
+                        )
+                    ),
+                    false, // Enable subsystem to allow dynamically added skills during game play.
+                    [
+                        new EventSystem(
+                            "Natural Weather",
+                            [
+                                new EventType(.05, "It is thundering outside."),
+                                new EventType(.1, "There are clouds and precipitation outside."),
+                                new EventType(.15, "There are clouds outside."),
+                                new EventType(.25, "There is a thick fog outside."),
+                                new EventType(1, "It is clear outside."),
+                            ],
+                            0.1
+                        ),
+                        new EventSystem(
+                            "Blood Moon",
+                            [
+                                new EventType(.5, "Suddenly a zombie appears!"),
+                                new EventType(1, ""),
+                            ],
+                            0.1
+                        ),
+                        new EventSystem(
+                            "Feeling",
+                            [
+                                new EventType(.05, "You feel upset."),
+                                new EventType(.10, "You feel betrayed."),
+                                new EventType(.15, "You feel emotional hurt."),
+                                new EventType(.20, "You are sad."),
+                                new EventType(.25, "You are depressed."),
+                                new EventType(.30, "You feel happy."),
+                                new EventType(.35, "You feel evil."),
+                                new EventType(.40, "You feel generous."),
+                                new EventType(.45, "You feel selfish."),
+                                new EventType(.50, "You need attention from another person."),
+                                new EventType(.55, "You need the comfort of home."),
+                                new EventType(1, ""),
+                            ],
+                            0.1
+                        )
+                    ],
+                    true, // Event system enabled
+                    "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]", // The default authors note for the setting.
+                    new ActionRate(
+                        .2, // The base starting rate for actions
+                        .2, // The maximum starting bonus
+                        .01 // The minimum starting bonus
+                    ),
+                );
+            }
+            //Set default Actions
+            const ACTIONS = [
+                new Action(
+                    ["default"],
+                    ["masterful", "remarkable", "flawless"],
+                    ["clumsy", "inept", "futile"],
+                    "Successfully, you manage to be",
+                    "Despite your efforts, you end up being",
+                    "You are unable to!",
+                    state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
+                    {
+                        // Allow action increase?
+                        increaseEnabled: false,
+                        // Allow action decrease?
+                        decreaseEnabled: false,
+                        // The actions maximum rate
+                        maxRate: state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
+                        // The actions minimum rate
+                        minRate: state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
+                        // The base rate of action change
+                        rateOfChange: 0,
+                        // The experience failure multiplier
+                        rateOfChangeFailureMultiplier: 1,
+                        // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+                        decreaseRate: 0
+                    },
+                    {
+                        // Enables the action cool down system
+                        enabled: false,
+                        // How quick the cool down rate goes down per player turn
+                        decreaseRatePerAction: 1,
+                        // The failure threshold for when to cool down actions
+                        failureThreshold: 3,
+                        // The current count
+                        failureCount: 0,
+                        // The remaining Cool down turns
+                        remainingTurns: 0
+                    }
+                ),
+                new Action(
+                    ["speech", "charisma", "diplomacy"],
+                    ["persuasive", "charming", "convincing"],
+                    ["awkward", "unconvincing", "ineffectual"],
+                    "You speak with",
+                    "You try to be persuasive, but your words are",
+                    "You're too flustered to speak clearly!"
+                ),// START action change section.
+                new Action(
+                    ["fighting", "combat", "weapon"],
+                    ["brutal efficiency", "deadly precision", "unyielding resolve"],
+                    ["misjudged", "ineffective", "reckless"],
+                    "You attack with",
+                    "Your attack proves",
+                    "You could die!"
+                ),
+                new Action(
+                    ["movement", "move", "running", "jumping", "dodge"],
+                    ["agile", "graceful", "fluid"],
+                    ["unprepared", "reckless", "awkward"],
+                    "Your movement is successfully and",
+                    "Your attempt to move was",
+                    "You can't move anymore!"
+                ),
+                new Action(
+                    ["scavenging"],
+                    ["find valuable resources", "uncover useful supplies", "discover essential items"],
+                    ["unprepared", "inadequate", "perilous"],
+                    "You scavenge successfully and",
+                    "Your attempt to scavenge is deemed",
+                    "You can't locate things to scavenge."
+                ),
+                new Action(
+                    ["stealth"],
+                    ["silent steps", "ghost-like silence", "undetectable movements"],
+                    ["clumsy", "exposed", "detected"],
+                    "You move with",
+                    "Your attempt to move stealthily fails; you are",
+                    "You are being conspicuous.",
+                ),
+                new Action(
+                    ["first aid"],
+                    ["lifesaving actions", "precise techniques", "effective treatments"],
+                    ["ineffective", "clumsy", "detrimental"],
+                    "You administer first aid with",
+                    "Your attempt at first aid is",
+                    "Your medical supplies are running dangerously low.",
+                    state.game.ActionRate.defaultActionRate(),
+                    defaultActionLeveling(),
+                    defaultActionCoolDown(),
+                    "You used vital supplies for your first-aid attempt."
+                )// End action change section.
+            ];
+
+            // Check if player state exists, if not, initialize
+            if (!state.player) {
+                state.player = {
+                    status: "",
+                    actions: ACTIONS
+                }
+            }
+            // Ensure state.memory.authorsNote is blank and ready.
+            if (!state.memory.authorsNote) {
+                state.memory.authorsNote = "";
+            }
+            // Ensure state.message is blank and ready.
+            state.message = "";
+        }
+        delphicBase(state, text, history, storyCards, info);
 
         const getActionByName = name => {
             if (state.game.dynamicActions) {
@@ -336,16 +417,16 @@ const modifier = (text) => {
             }
             const newRate = calculate(isSuccess);
             if (isSuccess) {
-                state.player.actions.forEach(sk => sk.failCount = 0);
+                state.player.actions.forEach(a => a.coolDown.failCount = 0);
                 if (action.leveling.increaseEnabled) {
                     action.rate = Math.min(action.rate + newRate, action.leveling.maxRate);
                 }
             } else {
                 if (action.coolDown.enabled) {
-                    action.failCount += 1;
+                    action.coolDown.failureCount += 1;
                     decreaseActionRate(action, calculate(isSuccess));
-                    if (action.failCount >= action.coolDown.threshold) {
-                        action.coolDown = action.coolDown.threshold;
+                    if (action.coolDown.failureCount >= action.coolDown.threshold) {
+                        action.coolDown.remainingTurns = action.coolDown.threshold;
                     }
                 }
             }
@@ -411,7 +492,7 @@ const modifier = (text) => {
         const actionParse = (text) => {
             const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
             const match = text.match(actionRegex);
-            state.game.environmentalStatus.forEach(e => e.change());
+            state.game.eventSystem.forEach(e => e.change());
             if (match) {
                 let action;
                 if (match[2]) {  // If action name is captured
@@ -463,9 +544,9 @@ const modifier = (text) => {
             }
         }
 
-        const getEnvironmentalStatus = () => {
-            if (ENABLE_DYNAMIC_ENVIRONMENT_SYSTEM) {
-                return state.game.environmentalStatus.map(e => e.description);
+        const getEventSystem = () => {
+            if (state.game.eventSystemEnabled) {
+                return state.game.eventSystem.map(e => e.description);
             }
             return [];
         }
@@ -480,17 +561,15 @@ const modifier = (text) => {
             return "";
         }
 
-        const authorsNoteManager = (notes) => (notes.join(" ").trim() + " " + AUTHORS_NOTES).trim();
-
         /**
          * Gets the players status.
          * @returns The status.
          */
         const getPlayerStatus = () => {
             const status = [
-                state.player.actions.filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0).map(a => a.coolDownPhrase),
-                state.player.status,
-                suddenly()]
+                ...state.player.actions.filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0).map(a => a.coolDownPhrase),
+                state.player.status.trim(),
+                suddenly().trim()]
                 .join(" ")
                 .trim();
             if (status.length > 0) {
@@ -513,36 +592,22 @@ const modifier = (text) => {
             }
             return "";
         }
-        // Check if player state exists, if not, initialize
-        if (!state.player) {
-            state.player = {
-                status: "",
-                actions: ACTIONS
-            }
-        }
-        if (!state.game) {
-            state.game = new Game();
-        }
-        // Ensure state.memory.authorsNote is blank and ready.
-        if (!state.memory.authorsNote) {
-            state.memory.authorsNote = "";
-        }
-        // Ensure state.message is blank and ready.
-        state.message = "";
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
         actionParse(text);
 
-        state.memory.authorsNote = authorsNoteManager([
-            getPlayerStatus(),
-            [...getEnvironmentalStatus()]
-        ]);
+        state.memory.authorsNote = [
+            getPlayerStatus().trim(),
+            ...(getEventSystem().map(s => s.trim())),
+            state.game.authorsNote.trim()
+        ].filter(e = e => e !== "").join(" ").trim();
 
         // Notify the player of the status.
         state.message += getPlayerStatusMessage();
+        return { state, text, history, storyCards, info }
     }
-    oracle(state, text, history, storyCards, info);
 
+    oracle(state, text, history, storyCards, info);
     return { text }
 }
 

@@ -7,6 +7,9 @@ const tester = (state, text, history, storyCards, info) => {
             if (random < .05) {
                 state.memory.frontMemory = " But you fail horrifically."
                 state.message = "You fail horrifically."
+            } else if (random > .95) {
+                state.memory.frontMemory = " You succeed Flawlessly."
+                state.message = "You succeed Flawlessly."
             } else if (random < chance) {
                 state.memory.frontMemory = " You succeed."
                 state.message = "You succeed."
