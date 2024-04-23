@@ -30,6 +30,10 @@ const modifier = (text) => {
             return arr[(currentIndex + 1) % arr.length];
         }
 
+        const defaultActionRate = () => {
+            return state.game.actionRate.starting + (Math.random() * (state.game.actionRate.MinBonusRate - state.game.actionRate.MaxBonusRate) + state.game.actionRate.MaxBonusRate)
+        }
+
         /**
          * The starting action rates.
          * @param {number} starting The minimum value for an action.
@@ -42,12 +46,9 @@ const modifier = (text) => {
                 this.MaxBonusRate = MaxBonusRate;
                 this.MinBonusRate = MinBonusRate;
             }
-            defaultActionRate() {
-                return this.starting + (Math.random() * (this.MinBonusRate - this.MaxBonusRate) + this.MaxBonusRate)
-            }
         }
 
-        /**ß
+        /**
          * The event for the event system.
          * @param {number} chance The chance this can be the event
          * @param {string} description The description of the event to be presented to the AI
@@ -160,7 +161,7 @@ const modifier = (text) => {
             rateOfChange = 0.001, // The base rate of action change
             rateOfChangeFailureMultiplier = 10, // The experience failure multiplier
             decreaseRate = 0.001 / 6 // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
-        );
+        )
 
         const defaultActionCoolDown = () => new CoolDown(
             true, //Enable the action cool down subsystem
@@ -168,7 +169,7 @@ const modifier = (text) => {
             3, // The failure threshold at which to activate the cool down
             0, // The current failure count.
             0 // Turns remain on cool down.
-        );
+        )
 
         class ActionHistory {
             constructor(name, actionCount) {
@@ -188,7 +189,7 @@ const modifier = (text) => {
                 memorable = .5,
                 knownFor = "",
                 memorableThreshold = 10,
-                rate = 0,
+                rate = defaultActionRate(),
                 leveling = new Leveling(),
                 coolDown = new CoolDown(),
                 note = "") {
@@ -216,17 +217,20 @@ const modifier = (text) => {
         }
 
         class Game {
-            constructor(playerActivity, dynamicActions, eventSystem, eventSystemEnabled, authorsNote, ActionRate, players, messages) {
+            constructor(playerActivity, dynamicActions, enableReputationSystem, enableSayCharismaCheck, eventSystem, eventSystemEnabled, authorsNote, actionRate, players, enablePlayerMessage, messages) {
                 this.playerActivity = playerActivity;
                 this.dynamicActions = dynamicActions;
+                this.enableReputationSystem = enableReputationSystem;
+                this.enableSayCharismaCheck = enableSayCharismaCheck;
                 this.eventSystem = eventSystem;
                 this.eventSystemEnabled = eventSystemEnabled;
                 this.authorsNote = authorsNote;
-                this.ActionRate = ActionRate;
+                this.actionRate = actionRate;
                 this.players = players;
+                this.enablePlayerMessage = enablePlayerMessage;
                 this.messages = messages;
             }
-        };
+        }
 
         const delphicBase = (state, text, history, storyCards, info) => {
             const GAME = new Game(
@@ -251,6 +255,8 @@ const modifier = (text) => {
                     )
                 ),
                 false, // Enable subsystem to allow dynamically added skills during game play.
+                true, // Enable reputation from action use.
+                true, // Enable say to charisma check sub system.
                 [
                     new EventSystem(
                         "Natural Weather",
@@ -289,6 +295,7 @@ const modifier = (text) => {
                     .2, // The maximum starting bonus
                     .01 // The minimum starting bonus
                 ),
+                true,
                 [], // Start the messages array blank.
             );
 
@@ -301,22 +308,22 @@ const modifier = (text) => {
                     ["default"],
                     ["masterful", "remarkable", "flawless"],
                     ["clumsy", "inept", "futile"],
-                    "Successfully, you manage to be",
-                    "Despite your efforts, you end up being",
+                    "Successfully, your action manages to be",
+                    "Despite your efforts, your actions end up being",
                     "You are unable to!",
                     .5,
                     "Your known to be bland, boring and run of the mill.",
                     10,
-                    state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
+                    state.game.actionRate.starting + state.game.actionRate.MaxBonusRate,
                     {
                         // Allow action increase?
                         increaseEnabled: false,
                         // Allow action decrease?
                         decreaseEnabled: false,
                         // The actions maximum rate
-                        maxRate: state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
+                        maxRate: state.game.actionRate.starting + state.game.actionRate.MaxBonusRate,
                         // The actions minimum rate
-                        minRate: state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
+                        minRate: state.game.actionRate.starting + state.game.actionRate.MaxBonusRate,
                         // The base rate of action change
                         rateOfChange: 0,
                         // The experience failure multiplier
@@ -338,14 +345,14 @@ const modifier = (text) => {
                     }
                 ),
                 new Action(
-                    ["charisma", "speech", "diplomacy", "talk", "speak", "converse", "influence", "charm", "convene", "convince", "coax", "reason", "persuade", "persuasion", "encourage", "encouragement", "win over", "assure", "reassure", "reassurance", "comfort", "intimidate"],
+                    ["charisma", "speech", "diplomacy", "words", "speak", "converse", "influence", "charm", "convene", "convince", "coax", "reason", "persuade", "persuasion", "encourage", "encouragement", "win over", "assure", "reassure", "reassurance", "comfort", "intimidate"],
                     ["persuasive", "charming", "convincing"],
                     ["awkward", "unconvincing", "ineffectual"],
                     "You speak with",
                     "You try to be persuasive, but your words are",
                     "You're too flustered to speak clearly!",
                     .5,
-                    "You are known to all around you. The room seems to light up when you enter.",
+                    "The room seems to light up when you enter.",
                     10
                 ),// START action change section.
                 new Action(
@@ -398,6 +405,7 @@ const modifier = (text) => {
             // Check if player state exists, if not, initialize
             if (!state.player) {
                 state.player = {
+                    name: "",
                     status: "",
                     actions: ACTIONS,
                     actionHistory: []
@@ -419,10 +427,10 @@ const modifier = (text) => {
                     // If skill does not exist, create it with default attributes.
                     let names = [];
                     names.push(name.toLowerCase());
-                    const newAction = new Action(names);
-                    state.player.actions.push(newAction); // Add the new action to the actions array
+                    action = new Action(names);
+                    state.player.actions.push(action); // Add the new action to the actions array
                 }
-                return state.player.actions.find(action => action.name.includes(name.toLowerCase()));
+                return action;
             }
             return state.player.actions.find(action => action.name.includes(name.toLowerCase())) || state.player.actions[0];
         }
@@ -466,6 +474,9 @@ const modifier = (text) => {
                 return false;
             }
             const success = Math.random() < action.rate;
+            if (success) {
+                processReputation(action);
+            }
             setActionState(action, success);
             const message = success ? `Your ${action.name[0]} check succeeded.` : `Your ${action.name[0]} check failed.`
             state.game.messages = [message];
@@ -508,32 +519,41 @@ const modifier = (text) => {
          * @param {string} text The user imputed text.
          */
         const actionParse = (text) => {
-            const actionRegex = /> (.*) (?:(try|tries|attempt|attempts) to use (.*) to |(try|tries|attempt|attempts) to |say(?:|s) "([^"]+)")/i;
+            const actionRegex = /> (.*) (?:(try|tries|attempt|attempts) to use (.*) to |(try|tries|attempt|attempts) to |(?:say|says) "([^"]+)")/i;
             const match = text.match(actionRegex);
             state.game.eventSystem.forEach(e => changeEvent(e));
             if (match) {
-                let action;
+                let action = null;
                 let name = match[1];
                 if (match[3]) {  // If action name is captured
                     action = getActionByName(match[3]);
                     activeTurn(true);
+                    processActionsCoolDown(action.name[0]);
+                    state.memory.frontMemory = getPhrase(action);
                 } else if (match[5]) {  // If speech is captured
-                    action = getActionByName("charisma");
-                    activeTurn(false);
+                    if (state.game.enableSayCharismaCheck) {
+                        action = getActionByName("charisma");
+                        activeTurn(false);
+                        processActionsCoolDown(action.name[0]);
+                        state.memory.frontMemory = getPhrase(action);
+                    }
                 } else {
                     action = getActionByName("default");
                     activeTurn(true);
+                    processActionsCoolDown(action.name[0]);
+                    state.memory.frontMemory = getPhrase(action);
                 }
-                if (Math.random() < action.memorable) {
-                    state.player.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
-                    state.player.actionHistory = state.player.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
-                }
-                processActionsCoolDown(action.name[0]);
-                state.memory.frontMemory = getPhrase(action);
             } else {
                 reduce(0, state.game.playerActivity.threat.active, -1);
                 reduce(0, state.game.playerActivity.threat.inactive, -1);
                 state.memory.frontMemory = "";  // No relevant action found
+            }
+        }
+
+        const processReputation = (action) => {
+            if (state.game.enableReputationSystem && (Math.random() < action.memorable)) {
+                state.player.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                state.player.actionHistory = state.player.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
             }
         }
 
@@ -639,8 +659,11 @@ const modifier = (text) => {
         ].filter(e = e => e !== "").join(" ").trim();
 
         // Notify the player of the status.
-        state.message = [state.game.messages, ...getPlayerStatusMessage()].filter(m => m !== "").join("\n").trim();
-        state.game.message = [];
+        if (state.game.enablePlayerMessage) {
+            state.message = [state.game.messages, ...getPlayerStatusMessage()].filter(m => m !== "").join("\n").trim();
+            state.game.message = [];
+        }
+
         return { state, text, history, storyCards, info }
     }
 
