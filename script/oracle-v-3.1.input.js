@@ -201,7 +201,7 @@ const oracle = (state, text, history, storyCards, info) => {
     }
 
     class Game {
-        constructor(playerActivity, dynamicActions, eventSystem, eventSystemEnabled, authorsNote, ActionRate, players) {
+        constructor(playerActivity, dynamicActions, eventSystem, eventSystemEnabled, authorsNote, ActionRate, players, messages) {
             this.playerActivity = playerActivity;
             this.dynamicActions = dynamicActions;
             this.eventSystem = eventSystem;
@@ -209,6 +209,7 @@ const oracle = (state, text, history, storyCards, info) => {
             this.authorsNote = authorsNote;
             this.ActionRate = ActionRate;
             this.players = players;
+            this.messages = messages;
         }
     };
 
@@ -281,6 +282,7 @@ const oracle = (state, text, history, storyCards, info) => {
                 .2, // The maximum starting bonus
                 .01 // The minimum starting bonus
             ),
+            [], // Start the messages array blank.
         );
 
         if (!state.game) {
@@ -326,7 +328,7 @@ const oracle = (state, text, history, storyCards, info) => {
                 }
             ),
             new Action(
-                ["charisma", "speech", "diplomacy", "talk", "speak", "converse"],
+                ["charisma", "speech", "diplomacy", "talk", "speak", "converse", "influence", "charm", "convene"],
                 ["persuasive", "charming", "convincing"],
                 ["awkward", "unconvincing", "ineffectual"],
                 "You speak with",
@@ -350,7 +352,7 @@ const oracle = (state, text, history, storyCards, info) => {
                 "You can't move anymore!"
             ),
             new Action(
-                ["observe", "look", "watch", "inspect", "investigate", "examine"],
+                ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell"],
                 ["perceptive", "attentive", "detailed"],
                 ["overlooked", "distracted", "cursory"],
                 "You observe carefully and",
@@ -431,7 +433,8 @@ const oracle = (state, text, history, storyCards, info) => {
         }
         const success = Math.random() < action.rate;
         setActionState(action, success);
-        state.message += success ? `\nYour ${action.name[0]} check succeeded.\n` : `\nYour ${action.name[0]} check failed.\n`;
+        const message = success ? `Your ${action.name[0]} check succeeded.` : `Your ${action.name[0]} check failed.`
+        state.game.messages = [message];
         return success;
     }
 
@@ -569,10 +572,8 @@ const oracle = (state, text, history, storyCards, info) => {
      */
     const getPlayerStatusMessage = () => {
         const status = state.player.actions.filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0)
-            .map(a => `${a.name[0]} is cooling down for ${a.coolDown.remainingTurns} turns. Causing: "${a.coolDownPhrase}"`)
-            .join("\n")
-            .trim();
-        if (status !== "") {
+            .map(a => `${a.name[0]} is cooling down for ${a.coolDown.remainingTurns} turns. Causing: "${a.coolDownPhrase}"`);
+        if (status.length > 0) {
             return status;
         }
         return "";
@@ -588,7 +589,8 @@ const oracle = (state, text, history, storyCards, info) => {
     ].filter(e = e => e !== "").join(" ").trim();
 
     // Notify the player of the status.
-    state.message += getPlayerStatusMessage();
+    state.message = [state.game.messages, ...getPlayerStatusMessage()].filter(m => m !== "").join("\n").trim();
+    state.game.message = [];
     return { state, text, history, storyCards, info }
 }
 module.exports = oracle;
