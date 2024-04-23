@@ -385,9 +385,7 @@ const modifier = (text) => {
                 let action = state.player.actions.find(action => action.name.includes(name.toLowerCase()));
                 if (!action) {
                     // If skill does not exist, create it with default attributes.
-                    let names = [];
-                    names.push(name.toLowerCase());
-                    const newAction = new Action(names);
+                    const newAction = new Action([name.toLowerCase()]);
                     state.player.actions.push(newAction); // Add the new action to the actions array
                 }
                 return state.player.actions.find(action => action.name.includes(name.toLowerCase()));
