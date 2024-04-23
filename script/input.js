@@ -214,76 +214,78 @@ const modifier = (text) => {
         };
 
         const delphicBase = (state, text, history, storyCards, info) => {
+            const GAME = new Game(
+                new PlayerActivity(
+                    new Exhaustion(
+                        true, // Enables the exhaustion system
+                        5, // Player exhaustion status threshold
+                        0, // Starting value for for inactive turns counter
+                        0, // Starting value for for active turns counter
+                        "You are exhausted!" // The message to display when the exhaustion threshold
+                    ),
+                    new Threat(
+                        true, // Enabled the player activity threat system
+                        3, // The threshold to drop below before activating
+                        3, // The current count of active turns
+                        3, // The current count of inactive turns,
+                        [
+                            "You can barely hear something.",
+                            "You saw something on the edge of your vision.",
+                            "You smell something but cannot make it out."
+                        ]
+                    )
+                ),
+                false, // Enable subsystem to allow dynamically added skills during game play.
+                [
+                    new EventSystem(
+                        "Natural Weather",
+                        [
+                            new EventType(.05, "It is thundering outside."),
+                            new EventType(.1, "There are clouds and precipitation outside."),
+                            new EventType(.15, "There are clouds outside."),
+                            new EventType(.25, "There is a thick fog outside."),
+                            new EventType(1, "It is clear outside."),
+                        ],
+                        0.1
+                    ),
+                    new EventSystem(
+                        "Blood Moon",
+                        [
+                            new EventType(.5, "Suddenly a zombie appears!"),
+                            new EventType(1, ""),
+                        ],
+                        0.1
+                    ),
+                    new EventSystem(
+                        "Feeling",
+                        [
+                            new EventType(.05, "You feel upset."),
+                            new EventType(.10, "You feel betrayed."),
+                            new EventType(.15, "You feel emotional hurt."),
+                            new EventType(.20, "You are sad."),
+                            new EventType(.25, "You are depressed."),
+                            new EventType(.30, "You feel happy."),
+                            new EventType(.35, "You feel evil."),
+                            new EventType(.40, "You feel generous."),
+                            new EventType(.45, "You feel selfish."),
+                            new EventType(.50, "You need attention from another person."),
+                            new EventType(.55, "You need the comfort of home."),
+                            new EventType(1, ""),
+                        ],
+                        0.1
+                    )
+                ],
+                true, // Event system enabled
+                "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]", // The default authors note for the setting.
+                new ActionRate(
+                    .2, // The base starting rate for actions
+                    .2, // The maximum starting bonus
+                    .01 // The minimum starting bonus
+                ),
+            );
+            
             if (!state.game) {
-                state.game = new Game(
-                    new PlayerActivity(
-                        new Exhaustion(
-                            true, // Enables the exhaustion system
-                            5, // Player exhaustion status threshold
-                            0, // Starting value for for inactive turns counter
-                            0, // Starting value for for active turns counter
-                            "You are exhausted!" // The message to display when the exhaustion threshold
-                        ),
-                        new Threat(
-                            true, // Enabled the player activity threat system
-                            3, // The threshold to drop below before activating
-                            3, // The current count of active turns
-                            3, // The current count of inactive turns,
-                            [
-                                "You can barely hear something.",
-                                "You saw something on the edge of your vision.",
-                                "You smell something but cannot make it out."
-                            ]
-                        )
-                    ),
-                    false, // Enable subsystem to allow dynamically added skills during game play.
-                    [
-                        new EventSystem(
-                            "Natural Weather",
-                            [
-                                new EventType(.05, "It is thundering outside."),
-                                new EventType(.1, "There are clouds and precipitation outside."),
-                                new EventType(.15, "There are clouds outside."),
-                                new EventType(.25, "There is a thick fog outside."),
-                                new EventType(1, "It is clear outside."),
-                            ],
-                            0.1
-                        ),
-                        new EventSystem(
-                            "Blood Moon",
-                            [
-                                new EventType(.5, "Suddenly a zombie appears!"),
-                                new EventType(1, ""),
-                            ],
-                            0.1
-                        ),
-                        new EventSystem(
-                            "Feeling",
-                            [
-                                new EventType(.05, "You feel upset."),
-                                new EventType(.10, "You feel betrayed."),
-                                new EventType(.15, "You feel emotional hurt."),
-                                new EventType(.20, "You are sad."),
-                                new EventType(.25, "You are depressed."),
-                                new EventType(.30, "You feel happy."),
-                                new EventType(.35, "You feel evil."),
-                                new EventType(.40, "You feel generous."),
-                                new EventType(.45, "You feel selfish."),
-                                new EventType(.50, "You need attention from another person."),
-                                new EventType(.55, "You need the comfort of home."),
-                                new EventType(1, ""),
-                            ],
-                            0.1
-                        )
-                    ],
-                    true, // Event system enabled
-                    "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]", // The default authors note for the setting.
-                    new ActionRate(
-                        .2, // The base starting rate for actions
-                        .2, // The maximum starting bonus
-                        .01 // The minimum starting bonus
-                    ),
-                );
+                state.game = GAME;
             }
             //Set default Actions
             const ACTIONS = [
@@ -485,9 +487,8 @@ const modifier = (text) => {
         }
 
         /**
-         * The oracle for use as command parse and entry point.
+         * The action command parse for use as command parse and entry point.
          * @param {string} text The user imputed text.
-         * @returns the oracle's outcome for a player action.
          */
         const actionParse = (text) => {
             const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
@@ -544,6 +545,9 @@ const modifier = (text) => {
             }
         }
 
+        /**
+         * Get currently active events.
+        */
         const getEventSystem = () => {
             if (state.game.eventSystemEnabled) {
                 return state.game.eventSystem.map(e => e.description);
