@@ -5,20 +5,19 @@ const oracle = (state, text, history, storyCards, info) => {
     const changeEvent = (eventSystem) => {
         if (Math.random() < eventSystem.chance) {
             if (eventSystem.isRandom) {
-
-                    const random = Math.random();
+                const random = Math.random();
                 eventSystem.events.every(e => {
-                        if (random < e.chance) {
-                            eventSystem.current = e;
-                            eventSystem.description = e.description;
-                            return false;
-                        }
-                    });
-                } else {
+                    if (random < e.chance) {
+                        eventSystem.current = e;
+                        eventSystem.description = e.description;
+                        return false;
+                    }
+                });
+            } else {
                 eventSystem.current = getNextItem(eventSystem.events, eventSystem.events.indexOf(e => e.description === eventSystem.current.description));
-                }
             }
         }
+    }
 
     const getNextItem = (arr, currentIndex) => {
         if (!arr.length) {
