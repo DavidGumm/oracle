@@ -4,6 +4,24 @@ const modifier = (text) => {
         // Helper functions
         const getRandomItem = arr => arr[Math.floor(Math.random() * arr.length)];
 
+        const changeEvent = (eventSystem) => {
+            if (Math.random() < eventSystem.chance) {
+                if (eventSystem.isRandom) {
+
+                    const random = Math.random();
+                    eventSystem.events.every(e => {
+                        if (random < e.chance) {
+                            eventSystem.current = e;
+                            eventSystem.description = e.description;
+                            return false;
+                        }
+                    });
+                } else {
+                    eventSystem.current = getNextItem(eventSystem.events, eventSystem.events.indexOf(e => e.description === eventSystem.current.description));
+                }
+            }
+        }
+
         const getNextItem = (arr, currentIndex) => {
             if (!arr.length) {
                 throw new Error('Array cannot be empty.');
@@ -13,13 +31,13 @@ const modifier = (text) => {
             return arr[(currentIndex + 1) % arr.length];
         }
 
+        /**
+         * The starting action rates.
+         * @param {number} starting The minimum value for an action.
+         * @param {number} MaxBonusRate The max starting bonus rate.
+         * @param {number} MinBonusRate The min starting bonus rate.
+         */
         class ActionRate {
-            /**
-             * The starting action rates.
-             * @param {number} starting The minimum value for an action.
-             * @param {number} MaxBonusRate The max starting bonus rate.
-             * @param {number} MinBonusRate The min starting bonus rate.
-             */
             constructor(starting, MaxBonusRate, MinBonusRate) {
                 this.starting = starting;
                 this.MaxBonusRate = MaxBonusRate;
@@ -56,23 +74,6 @@ const modifier = (text) => {
                 this.current = getRandomItem(events);
                 this.description = this.current.description;
                 this.isRandom = true
-            }
-            change() {
-                if (Math.random() < this.chance) {
-                    if (this.isRandom) {
-
-                        const random = Math.random();
-                        this.events.every(e => {
-                            if (random < e.chance) {
-                                this.current = e;
-                                this.description = e.description;
-                                return false;
-                            }
-                        });
-                    } else {
-                        this.current = getNextItem(this.events, this.events.indexOf(e => e.description === this.current.description));
-                    }
-                }
             }
         }
 
@@ -203,13 +204,14 @@ const modifier = (text) => {
         }
 
         class Game {
-            constructor(playerActivity, dynamicActions, eventSystem, eventSystemEnabled, authorsNote, ActionRate) {
+            constructor(playerActivity, dynamicActions, eventSystem, eventSystemEnabled, authorsNote, ActionRate, players) {
                 this.playerActivity = playerActivity;
                 this.dynamicActions = dynamicActions;
                 this.eventSystem = eventSystem;
                 this.eventSystemEnabled = eventSystemEnabled;
                 this.authorsNote = authorsNote;
                 this.ActionRate = ActionRate;
+                this.players = players;
             }
         };
 
@@ -276,14 +278,14 @@ const modifier = (text) => {
                     )
                 ],
                 true, // Event system enabled
-                "[Setting: Zombie post-apocalypse] [Tone: Grim, Dark] [Style: Gritty, Evocative, Fast Zombies]", // The default authors note for the setting.
+                "Setting: Zombie post-apocalypse. Tone: Grim, Dark. Style: Gritty, Evocative, Fast Zombies.", // The default authors note for the setting.
                 new ActionRate(
                     .2, // The base starting rate for actions
                     .2, // The maximum starting bonus
                     .01 // The minimum starting bonus
                 ),
             );
-            
+
             if (!state.game) {
                 state.game = GAME;
             }
@@ -327,7 +329,7 @@ const modifier = (text) => {
                     }
                 ),
                 new Action(
-                    ["speech", "charisma", "diplomacy"],
+                    ["charisma", "speech", "diplomacy", "talk", "speak", "converse"],
                     ["persuasive", "charming", "convincing"],
                     ["awkward", "unconvincing", "ineffectual"],
                     "You speak with",
@@ -335,7 +337,7 @@ const modifier = (text) => {
                     "You're too flustered to speak clearly!"
                 ),// START action change section.
                 new Action(
-                    ["fighting", "combat", "weapon"],
+                    ["fighting", "combat", "weapon", "hit", "strike", "attack"],
                     ["brutal efficiency", "deadly precision", "unyielding resolve"],
                     ["misjudged", "ineffective", "reckless"],
                     "You attack with",
@@ -351,33 +353,14 @@ const modifier = (text) => {
                     "You can't move anymore!"
                 ),
                 new Action(
-                    ["scavenging"],
-                    ["find valuable resources", "uncover useful supplies", "discover essential items"],
-                    ["unprepared", "inadequate", "perilous"],
-                    "You scavenge successfully and",
-                    "Your attempt to scavenge is deemed",
-                    "You can't locate things to scavenge."
+                    ["observe", "look", "watch", "inspect", "investigate", "examine"],
+                    ["perceptive", "attentive", "detailed"],
+                    ["overlooked", "distracted", "cursory"],
+                    "You observe carefully and",
+                    "Despite your efforts to notice details, you are",
+                    "Your focus breaks and you miss crucial details!"
                 ),
-                new Action(
-                    ["stealth"],
-                    ["silent steps", "ghost-like silence", "undetectable movements"],
-                    ["clumsy", "exposed", "detected"],
-                    "You move with",
-                    "Your attempt to move stealthily fails; you are",
-                    "You are being conspicuous.",
-                ),
-                new Action(
-                    ["first aid"],
-                    ["lifesaving actions", "precise techniques", "effective treatments"],
-                    ["ineffective", "clumsy", "detrimental"],
-                    "You administer first aid with",
-                    "Your attempt at first aid is",
-                    "Your medical supplies are running dangerously low.",
-                    state.game.ActionRate.defaultActionRate(),
-                    defaultActionLeveling(),
-                    defaultActionCoolDown(),
-                    "You used vital supplies for your first-aid attempt."
-                )// End action change section.
+                // End action change section.
             ];
 
             // Check if player state exists, if not, initialize
@@ -491,18 +474,19 @@ const modifier = (text) => {
          * @param {string} text The user imputed text.
          */
         const actionParse = (text) => {
-            const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
+            const actionRegex = /> (.*) (?:(try|tries|attempt|attempts) to use (.*) to |(try|tries|attempt|attempts) to |say(?:|s) "([^"]+)")/i;
             const match = text.match(actionRegex);
-            state.game.eventSystem.forEach(e => e.change());
+            state.game.eventSystem.forEach(e => changeEvent(e));
             if (match) {
                 let action;
-                if (match[2]) {  // If action name is captured
-                    action = getActionByName(match[2]);
+                let name = match[1];
+                if (match[3]) {  // If action name is captured
+                    action = getActionByName(match[3]);
                     activeTurn(true);
-                } else if (match[4]) {  // If speech is captured
-                    action = getActionByName("speech");
+                } else if (match[5]) {  // If speech is captured
+                    action = getActionByName("charisma");
                     activeTurn(false);
-                } else {  // Default would be match[3]
+                } else {
                     action = getActionByName("default");
                     activeTurn(true);
                 }
