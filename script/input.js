@@ -47,7 +47,7 @@ const modifier = (text) => {
             }
         }
 
-        /**
+        /**ß
          * The event for the event system.
          * @param {number} chance The chance this can be the event
          * @param {string} description The description of the event to be presented to the AI
@@ -264,14 +264,6 @@ const modifier = (text) => {
                         0.1
                     ),
                     new EventSystem(
-                        "Blood Moon",
-                        [
-                            new EventType(.5, "Suddenly a zombie appears!"),
-                            new EventType(1, ""),
-                        ],
-                        0.1
-                    ),
-                    new EventSystem(
                         "Feeling",
                         [
                             new EventType(.05, "You feel upset."),
@@ -346,7 +338,7 @@ const modifier = (text) => {
                     }
                 ),
                 new Action(
-                    ["charisma", "speech", "diplomacy", "talk", "speak", "converse", "influence", "charm", "convene"],
+                    ["charisma", "speech", "diplomacy", "talk", "speak", "converse", "influence", "charm", "convene", "convince", "coax", "reason", "persuade", "persuasion", "encourage", "encouragement", "win over", "assure", "reassure", "reassurance", "comfort", "intimidate"],
                     ["persuasive", "charming", "convincing"],
                     ["awkward", "unconvincing", "ineffectual"],
                     "You speak with",
@@ -357,7 +349,7 @@ const modifier = (text) => {
                     10
                 ),// START action change section.
                 new Action(
-                    ["fighting", "combat", "weapon", "hit", "strike", "attack"],
+                    ["fighting", "combat", "weapon", "hit", "strike", "attack", "counter", "counterattack", "assault", "ambush"],
                     ["brutal efficiency", "deadly precision", "unyielding resolve"],
                     ["misjudged", "ineffective", "reckless"],
                     "You attack with",
@@ -368,7 +360,7 @@ const modifier = (text) => {
                     8
                 ),
                 new Action(
-                    ["movement", "move", "running", "jumping", "dodge"],
+                    ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
                     ["agile", "graceful", "fluid"],
                     ["unprepared", "reckless", "awkward"],
                     "Your movement is successfully and",
@@ -379,7 +371,7 @@ const modifier = (text) => {
                     15
                 ),
                 new Action(
-                    ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell"],
+                    ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
                     ["perceptive", "attentive", "detailed"],
                     ["overlooked", "distracted", "cursory"],
                     "You observe carefully and",

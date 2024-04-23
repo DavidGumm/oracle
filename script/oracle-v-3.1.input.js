@@ -45,7 +45,7 @@ const oracle = (state, text, history, storyCards, info) => {
         }
     }
 
-    /**
+    /**ß
      * The event for the event system.
      * @param {number} chance The chance this can be the event
      * @param {string} description The description of the event to be presented to the AI
@@ -258,14 +258,6 @@ const oracle = (state, text, history, storyCards, info) => {
                         new EventType(.15, "There are clouds outside."),
                         new EventType(.25, "There is a thick fog outside."),
                         new EventType(1, "It is clear outside."),
-                    ],
-                    0.1
-                ),
-                new EventSystem(
-                    "Blood Moon",
-                    [
-                        new EventType(.5, "Suddenly a zombie appears!"),
-                        new EventType(1, ""),
                     ],
                     0.1
                 ),
