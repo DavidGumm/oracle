@@ -22,7 +22,7 @@ const info = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-const authorsNoteRegEx = /(|\[Your status: (|You're too flustered to speak clearly!)] )(There are clouds outside. |It is thundering outside. |It is clear outside. |There is a thick fog outside. |There are clouds and precipitation outside. )(|Suddenly a zombie appears! )(|You feel upset. |You feel betrayed. |You feel emotional hurt. |You are sad. |You are depressed. |You feel happy. |You feel evil. |You feel generous. |You feel selfish. |You need attention from another person. |You need the comfort of home. )Setting: Zombie post-apocalypse. Tone: Grim, Dark. Style: Gritty, Evocative, Fast Zombies./
+const authorsNoteRegEx = /(|\[Your status: (|You're too flustered to speak clearly!)] )(There are clouds outside. |It is thundering outside. |It is clear outside. |There is a thick fog outside. |There are clouds and precipitation outside. )(|Suddenly a zombie appears! )(|You feel upset. |You feel betrayed. |You feel emotional hurt. |You are sad. |You are depressed. |You feel happy. |You feel evil. |You feel generous. |You feel selfish. |You need attention from another person. |You need the comfort of home. )(|Your known to be bland, boring and run of the mill. )(|You are known to all around you. )(|The room seems to light up when you enter. )(|People fear you and your aura of violence. )(|You move with grace and style. )Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual./
 
 const runner = () => {
     test("Test Fighting action", () => {

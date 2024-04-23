@@ -168,6 +168,13 @@ const oracle = (state, text, history, storyCards, info) => {
         0 // Turns remain on cool down.
     );
 
+    class ActionHistory {
+        constructor(name, actionCount) {
+            this.name = name;
+            this.actionCount = actionCount;
+        }
+    }
+
     class Action {
         constructor(
             name = [],
@@ -176,6 +183,9 @@ const oracle = (state, text, history, storyCards, info) => {
             successStart = "Successfully, you manage to be",
             failureStart = "Despite your efforts, you end up being",
             coolDownPhrase = "You are unable to!",
+            memorable = .5,
+            knownFor = "",
+            memorableThreshold = 10,
             rate = 0,
             leveling = new Leveling(),
             coolDown = new CoolDown(),
@@ -190,6 +200,9 @@ const oracle = (state, text, history, storyCards, info) => {
             this.rate = rate;
             this.leveling = leveling;
             this.coolDown = coolDown;
+            this.memorable = memorable;
+            this.knownFor = knownFor;
+            this.memorableThreshold = memorableThreshold;
         }
     }
 
@@ -224,7 +237,7 @@ const oracle = (state, text, history, storyCards, info) => {
                     "You are exhausted!" // The message to display when the exhaustion threshold
                 ),
                 new Threat(
-                    true, // Enabled the player activity threat system
+                    false, // Enabled the player activity threat system
                     3, // The threshold to drop below before activating
                     3, // The current count of active turns
                     3, // The current count of inactive turns,
@@ -276,9 +289,9 @@ const oracle = (state, text, history, storyCards, info) => {
                 )
             ],
             true, // Event system enabled
-            "Setting: Zombie post-apocalypse. Tone: Grim, Dark. Style: Gritty, Evocative, Fast Zombies.", // The default authors note for the setting.
+            "Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual.", // The default authors note for the setting.
             new ActionRate(
-                .2, // The base starting rate for actions
+                .4, // The base starting rate for actions
                 .2, // The maximum starting bonus
                 .01 // The minimum starting bonus
             ),
@@ -297,6 +310,9 @@ const oracle = (state, text, history, storyCards, info) => {
                 "Successfully, you manage to be",
                 "Despite your efforts, you end up being",
                 "You are unable to!",
+                .5,
+                "Your known to be bland, boring and run of the mill.",
+                10,
                 state.game.ActionRate.starting + state.game.ActionRate.MaxBonusRate,
                 {
                     // Allow action increase?
@@ -333,7 +349,10 @@ const oracle = (state, text, history, storyCards, info) => {
                 ["awkward", "unconvincing", "ineffectual"],
                 "You speak with",
                 "You try to be persuasive, but your words are",
-                "You're too flustered to speak clearly!"
+                "You're too flustered to speak clearly!",
+                .5,
+                "You are known to all around you. The room seems to light up when you enter.",
+                10
             ),// START action change section.
             new Action(
                 ["fighting", "combat", "weapon", "hit", "strike", "attack"],
@@ -341,7 +360,10 @@ const oracle = (state, text, history, storyCards, info) => {
                 ["misjudged", "ineffective", "reckless"],
                 "You attack with",
                 "Your attack proves",
-                "You could die!"
+                "You could die!",
+                .9,
+                "People fear you and your aura of violence.",
+                8
             ),
             new Action(
                 ["movement", "move", "running", "jumping", "dodge"],
@@ -349,7 +371,10 @@ const oracle = (state, text, history, storyCards, info) => {
                 ["unprepared", "reckless", "awkward"],
                 "Your movement is successfully and",
                 "Your attempt to move was",
-                "You can't move anymore!"
+                "You can't move anymore!",
+                .2,
+                "You move with grace and style.",
+                15
             ),
             new Action(
                 ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell"],
@@ -357,7 +382,21 @@ const oracle = (state, text, history, storyCards, info) => {
                 ["overlooked", "distracted", "cursory"],
                 "You observe carefully and",
                 "Despite your efforts to notice details, you are",
-                "Your focus breaks and you miss crucial details!"
+                "Your focus breaks and you miss crucial details!",
+                .3,
+                "Your eyes are always watching.",
+                10
+            ),
+            new Action(
+                ["performance", "dancing", "singing", "jokes"],
+                ["perceptive", "engaging", "lively"],
+                ["overlooked", "distracted", "bland"],
+                "Your preform performance is ",
+                "Despite your efforts, you are",
+                "Your focus breaks and your performance falls flat.",
+                .8,
+                "You bring smiles to peoples faces.",
+                10
             ),
             // End action change section.
         ];
@@ -366,7 +405,8 @@ const oracle = (state, text, history, storyCards, info) => {
         if (!state.player) {
             state.player = {
                 status: "",
-                actions: ACTIONS
+                actions: ACTIONS,
+                actionHistory: []
             }
         }
         // Ensure state.memory.authorsNote is blank and ready.
@@ -490,6 +530,10 @@ const oracle = (state, text, history, storyCards, info) => {
                 action = getActionByName("default");
                 activeTurn(true);
             }
+            if (Math.random() < action.memorable) {
+                state.player.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                state.player.actionHistory = state.player.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
+            }
             processActionsCoolDown(action.name[0]);
             state.memory.frontMemory = getPhrase(action);
         } else {
@@ -582,10 +626,22 @@ const oracle = (state, text, history, storyCards, info) => {
     // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
     actionParse(text);
 
+    const getReputation=()=> {
+        let rep = [];
+        state.player.actions.forEach(action => {
+            const triggeredRep = state.player.actionHistory.filter(ah => ah.name === action.name[0]);
+            if (triggeredRep.length > action.memorableThreshold) {
+                rep.push(action.knownFor);
+            }
+        });
+        return rep;
+    }
+
     state.memory.authorsNote = [
-        getPlayerStatus().trim(),
-        ...(getEventSystem().map(s => s.trim())),
-        state.game.authorsNote.trim()
+        getPlayerStatus(),
+        ...getEventSystem(),
+        ...getReputation(),
+        state.game.authorsNote,
     ].filter(e = e => e !== "").join(" ").trim();
 
     // Notify the player of the status.
