@@ -37,18 +37,6 @@ const runner = () => {
         expect(results.info).toMatchObject(info);
     });
 
-    test("Test Skill action", () => {
-        const text = "> You try to use scavenging to find resources.";
-        const results = oracle(state, text, history, storyCards, info);
-        expect(results.state).toMatchObject(state);
-        expect(results.state.message).toMatch(/Your scavenging check (succeeded|failed)./);
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
-        expect(results.text).toBe(text);
-        expect(results.history).toMatchObject(history);
-        expect(results.storyCards).toMatchObject(storyCards);
-        expect(results.info).toMatchObject(info);
-    });
-
     test("Test default action", () => {
         const text = "> You try to move the rock.";
         const results = oracle(state, text, history, storyCards, info);
@@ -65,7 +53,7 @@ const runner = () => {
         const text = "> You say \"Some words you say.\"";
         const results = oracle(state, text, history, storyCards, info);
         expect(results.state).toMatchObject(state);
-        expect(results.state.message).toMatch(/(Your speech check (succeeded|failed).|speech is cooling down for 3 turns. Causing: \"You're too flustered to speak clearly!\")/);
+        expect(results.state.message).toMatch(/(Your charisma check (succeeded|failed).|speech is cooling down for 3 turns. Causing: \"You're too flustered to speak clearly!\")/);
         expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
@@ -81,16 +69,6 @@ const runner = () => {
         //expect(results.state).toMatchObject(state);
         expect(results.state.message).toMatch(/Your fighting check (succeeded|failed)./);
         expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
-        expect(results.history).toMatchObject(history);
-        expect(results.storyCards).toMatchObject(storyCards);
-        expect(results.info).toMatchObject(info);
-    });
-
-    test("Test Skill action post init", () => {
-        const text = "> You try to use scavenging to find resources.";
-        const results = oracle(state, text, history, storyCards, info);
-        //expect(results.state).toMatchObject(state);
-        expect(results.state.message).toMatch(/Your scavenging check (succeeded|failed)./);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
         expect(results.info).toMatchObject(info);
@@ -135,7 +113,7 @@ const runner = () => {
         const text = "> You say \"Some words you say.\"";
         const results = oracle(state, text, history, storyCards, info);
         //expect(results.state).toMatchObject(state);
-        expect(results.state.message).toMatch(/(Your speech check (succeeded|failed).|speech is cooling down for 3 turns. Causing: \"You're too flustered to speak clearly!\")/);
+        expect(results.state.message).toMatch(/(Your charisma check (succeeded|failed).|speech is cooling down for 3 turns. Causing: \"You're too flustered to speak clearly!\")/);
         expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);

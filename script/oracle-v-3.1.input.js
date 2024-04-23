@@ -326,7 +326,7 @@ const oracle = (state, text, history, storyCards, info) => {
                 }
             ),
             new Action(
-                ["speech", "charisma", "diplomacy"],
+                ["charisma", "speech", "diplomacy", "talk", "speak", "converse"],
                 ["persuasive", "charming", "convincing"],
                 ["awkward", "unconvincing", "ineffectual"],
                 "You speak with",
@@ -334,7 +334,7 @@ const oracle = (state, text, history, storyCards, info) => {
                 "You're too flustered to speak clearly!"
             ),// START action change section.
             new Action(
-                ["fighting", "combat", "weapon"],
+                ["fighting", "combat", "weapon", "hit", "strike", "attack"],
                 ["brutal efficiency", "deadly precision", "unyielding resolve"],
                 ["misjudged", "ineffective", "reckless"],
                 "You attack with",
@@ -349,34 +349,7 @@ const oracle = (state, text, history, storyCards, info) => {
                 "Your attempt to move was",
                 "You can't move anymore!"
             ),
-            new Action(
-                ["scavenging"],
-                ["find valuable resources", "uncover useful supplies", "discover essential items"],
-                ["unprepared", "inadequate", "perilous"],
-                "You scavenge successfully and",
-                "Your attempt to scavenge is deemed",
-                "You can't locate things to scavenge."
-            ),
-            new Action(
-                ["stealth"],
-                ["silent steps", "ghost-like silence", "undetectable movements"],
-                ["clumsy", "exposed", "detected"],
-                "You move with",
-                "Your attempt to move stealthily fails; you are",
-                "You are being conspicuous.",
-            ),
-            new Action(
-                ["first aid"],
-                ["lifesaving actions", "precise techniques", "effective treatments"],
-                ["ineffective", "clumsy", "detrimental"],
-                "You administer first aid with",
-                "Your attempt at first aid is",
-                "Your medical supplies are running dangerously low.",
-                state.game.ActionRate.defaultActionRate(),
-                defaultActionLeveling(),
-                defaultActionCoolDown(),
-                "You used vital supplies for your first-aid attempt."
-            )// End action change section.
+            // End action change section.
         ];
 
         // Check if player state exists, if not, initialize
@@ -499,9 +472,9 @@ const oracle = (state, text, history, storyCards, info) => {
                 action = getActionByName(match[2]);
                 activeTurn(true);
             } else if (match[4]) {  // If speech is captured
-                action = getActionByName("speech");
+                action = getActionByName("charisma");
                 activeTurn(false);
-            } else {  // Default would be match[3]
+            } else {
                 action = getActionByName("default");
                 activeTurn(true);
             }
