@@ -59,23 +59,23 @@ const tester = (state, text, history, storyCards, info) => {
     }
 
     /**
-    * The main function that coordinates the application logic.
+    * The main application logic to match commands.
     */
     function main(chance) {
-        const match = text.match(/(?:> (.*) (try|tries|attempt|attempts) )/i);
+        const matchDefault = text.match(/(?:> (.*) (try|tries|attempt|attempts) )/i);
 
-        if (match) {
-            const matchAt = text.match(/(?:> .* (?:try|tries|attempt|attempts) @(0?.\d+)) /i);
-            if (matchAt && matchAt[1]) {
-                chance = parseFloat(matchAt[1]);
-                text = text.replace("@" + matchAt[1] + " ", "");
+        if (matchDefault) {
+            const matchAtChance = text.match(/(?:> .* (?:try|tries|attempt|attempts) @(0?.\d+)) /i);
+            if (matchAtChance && matchAtChance[1]) {
+                chance = parseFloat(matchAtChance[1]);
+                text = text.replace("@" + matchAtChance[1] + " ", "");
             }
-            state.memory.frontMemory = determineOutcome(chance, match[1]);
+            return determineOutcome(chance, match[1]);
         } else {
-            state.memory.frontMemory = "";
+            return "";
         }
     }
-    main(DEFAULT_CHANCE_FOR_SUCCESS);
+    state.memory.frontMemory = main(DEFAULT_CHANCE_FOR_SUCCESS);
 
     return { state, text, history, storyCards, info }
 }
