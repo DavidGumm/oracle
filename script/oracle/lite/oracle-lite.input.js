@@ -12,80 +12,70 @@ const tester = (state, text, history, storyCards, info) => {
 
     // The following are the messages you receive and are send to the AI to signify success or failure.
     // The critical success message
-    const MESSAGE_CRITICAL_SUCCESS = "flawlessly";
+    const ADJECTIVES_CRITICAL_SUCCESS = ["flawlessly"];
     // The failure success message
-    const MESSAGE_CRITICAL_FAILURE = "horrifically";
-    // The critical success message
+    const ADJECTIVES_CRITICAL_FAILURE = ["horrifically"];
+    // The success message
     const MESSAGE_SUCCESS = "succeed";
-    // The failure success message
+    // The failure message
     const MESSAGE_FAILURE = "fail";
 
     //DO NOT MODIFY BELOW THIS LINE.
     //HERE THERE BE DRAGONS O_o.
 
     /**
-     * The main entry point to the application.
+     * Gets a random item from an array.
+     * @param {array} arr Array of items.
+     * @returns Random item from the array or an empty string if array is empty.
      */
-    const main = () => {
-        /**
-        * Sets the message to be sent to the user gated by ENABLED_USER_MESSAGES.
-        * @param {string} message The message to be sent to the user.
-        */
-        const setMessage = (who, message) => {
-            const newMessage = who + " " + message
-            if (ENABLED_USER_MESSAGES) {
-                state.message = newMessage
-            }
-            return newMessage;
-        }
+    const getRandomItem = (arr) => arr.length ? arr[Math.floor(Math.random() * arr.length)] : "";
 
-        const getMessage = (who, message) => {
-            return message + ((who === "You" || who === "I") ? "" : "s");
+    /**
+     * Sends a message to the user if messages are enabled.
+     * @param {string} message The message to send.
+     */
+    const setUserMessage = (message) => {
+        if (ENABLED_USER_MESSAGES) {
+            state.message = message;
         }
+        return message;
+    }
 
-        /**
-         * Decides the fate of the action.
-         * @param {number} chance A fraction representing the total probability of success.
-         * @returns The message for success or failure.
-         */
-        const oracle = (chance, who) => {
-            const random = Math.random();
-            const combine = (message, isSuccess) => {
-                return (isSuccess ? " And " : " But ") + message;
-            }
-            if (random < DEFAULT_CRITICAL_FAILURE) {
-                const message = getMessage(who, MESSAGE_FAILURE) + " " + MESSAGE_CRITICAL_FAILURE + "!";
-                return combine(setMessage(who, message), false);
-            } else if (random > DEFAULT_CRITICAL_SUCCESS) {
-                const message = getMessage(who, MESSAGE_SUCCESS) + MESSAGE_CRITICAL_SUCCESS + ".";
-                return combine(setMessage(who, message), true);
-            } else if (random > chance) {
-                const message = getMessage(who, MESSAGE_SUCCESS) + ".";
-                return combine(setMessage(who, message), true);
-            } else {
-                const message = getMessage(who, MESSAGE_FAILURE) + "!";
-                return combine(setMessage(who, message), false);
-            }
-        }
+    /**
+     * Decides the fate of the action.
+     * @param {number} chance A fraction representing the total probability of success.
+     * @returns The message for success or failure.
+     */
+    const determineOutcome = (chance, who) => {
+        const random = Math.random();
+        const isSuccess = random > chance;
+        const isCritical = random < DEFAULT_CRITICAL_FAILURE || random > DEFAULT_CRITICAL_SUCCESS;
+        const adjective = getRandomItem(isSuccess ?
+            ADJECTIVES_CRITICAL_SUCCESS : ADJECTIVES_CRITICAL_FAILURE);
+        const message = (isSuccess ? MESSAGE_SUCCESS : MESSAGE_FAILURE) + ((who === "You" || who === "I") ? "" : "s") +
+            (isCritical ? ` ${adjective}` : "") +
+            (isSuccess ? "." : "!");
+        return (isSuccess ? " And " : " But ") + setUserMessage(who + " " + message);
+    }
 
-        // Define the default chance
-        let chance = DEFAULT_CHANCE_FOR_SUCCESS;
-        state.memory.frontMemory = "";
-        state.message = undefined;
-        const match = text.match(/(?:> (.*) (try|tries|attempt|attempts) )/i)
+    /**
+    * The main function that coordinates the application logic.
+    */
+    function main(chance) {
+        const match = text.match(/(?:> (.*) (try|tries|attempt|attempts) )/i);
+
         if (match) {
             const matchAt = text.match(/(?:> .* (?:try|tries|attempt|attempts) @(0?.\d+)) /i);
-            // If match then use the number provided by the user.
             if (matchAt && matchAt[1]) {
-                // Parse th command for the number of the roll.
-                chance = Number.parseFloat(matchAt[1]);
-                // Remove the number for the roll from the text.
-                text = text.replace(("@" + matchAt[1] + " "), "");
+                chance = parseFloat(matchAt[1]);
+                text = text.replace("@" + matchAt[1] + " ", "");
             }
-            state.memory.frontMemory = oracle(chance, match[1]);
+            state.memory.frontMemory = determineOutcome(chance, match[1]);
+        } else {
+            state.memory.frontMemory = "";
         }
     }
-    main();
+    main(DEFAULT_CHANCE_FOR_SUCCESS);
 
     return { state, text, history, storyCards, info }
 }

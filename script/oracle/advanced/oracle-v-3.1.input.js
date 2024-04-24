@@ -1,6 +1,6 @@
 const oracle = (state, text, history, storyCards, info) => {
     // Helper functions
-    const getRandomItem = arr => arr[Math.floor(Math.random() * arr.length)];
+    const getRandomItem = arr => arr[Math.floor(Math.random() * arr.length)] || arr[0];
 
     const changeEvent = (eventSystem) => {
         if (Math.random() < eventSystem.chance) {
