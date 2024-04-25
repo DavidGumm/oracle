@@ -355,7 +355,7 @@ const modifier = (text) => {/**
          * @returns the oracle's outcome for a player action.
          */
         const actionParse = (text) => {
-            const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
+            const actionRegex = /(?:> .* (try|attempt|tries|attempts) to use (.*) to |> .* (try|attempt|tries|attempts) to |> .* (say|says) "([^"]+)")/i;
             const match = text.match(actionRegex);
             if (match) {
                 let action;

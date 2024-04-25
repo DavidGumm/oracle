@@ -61,7 +61,7 @@ const tester = (state, text, history, storyCards, info) => {
     /**
     * The main application logic to match commands.
     */
-    function main(chance) {
+    const main = (chance) => {
         const matchDefault = text.match(/(?:> (.*) (try|tries|attempt|attempts) )/i);
 
         if (matchDefault) {
@@ -70,7 +70,7 @@ const tester = (state, text, history, storyCards, info) => {
                 chance = parseFloat(matchAtChance[1]);
                 text = text.replace("@" + matchAtChance[1] + " ", "");
             }
-            return determineOutcome(chance, match[1]);
+            return determineOutcome(chance, matchDefault[1]);
         } else {
             return "";
         }

@@ -24,7 +24,8 @@ const info = {
 };
 const authorsNoteRegEx = /(|\[Your status: (|You're too flustered to speak clearly!)] )(There are clouds outside. |It is thundering outside. |It is clear outside. |There is a thick fog outside. |There are clouds and precipitation outside. )(|Suddenly a zombie appears! )(|You feel upset. |You feel betrayed. |You feel emotional hurt. |You are sad. |You are depressed. |You feel happy. |You feel evil. |You feel generous. |You feel selfish. |You need attention from another person. |You need the comfort of home. )(|Your known to be bland, boring and run of the mill. )(|You are known to all around you. )(|The room seems to light up when you enter. )(|People fear you and your aura of violence. )(|You move with grace and style. )Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Bad things are allowed to happen to the protagonist and other important characters. The protagonist is allowed to struggle or even fail. It is forbidden to directly state character emotions; instead, convey them via behavior and body language. Characters are allowed to disagree with the protagonist and follow their own goals. Villains should not capitulate as soon as the protagonist uses logic.Villains have reasons for what they do, and will generally continue opposing the protagonist regardless./
 
-const runner = () => {
+
+for (let index = 0; index < 100; index++) {
     test("Test Fighting action", () => {
         const text = "> You try to use fighting to defend yourself.";
         const results = oracle(state, text, history, storyCards, info);
@@ -120,8 +121,4 @@ const runner = () => {
         expect(results.storyCards).toMatchObject(storyCards);
         expect(results.info).toMatchObject(info);
     });
-}
-
-for (let index = 0; index < 100; index++) {
-    runner();
 }

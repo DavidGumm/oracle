@@ -231,7 +231,7 @@ const modifier = (text) => {/**
                 "You channel holy energies with",
                 // Failure statement
                 "Your attempt to wield divine power is",
-                // Exhaustion statement / status  
+                // Exhaustion statement / status
                 "Your divine connection is strained!",
                 // Starting rate
                 defaultActionRate(),
@@ -251,7 +251,7 @@ const modifier = (text) => {/**
                 "Your attempt at purification proves",
                 // Exhaustion statement
                 "Your powers of purification wane!",
-                // Starting rate  
+                // Starting rate
                 defaultActionRate(),
                 new Leveling(),
                 new CoolDown()
@@ -355,7 +355,7 @@ const modifier = (text) => {/**
          * @returns the oracle's outcome for a player action.
          */
         const actionParse = (text) => {
-            const actionRegex = /(?:> You (try|attempt) to use (.*) to |> You (try|attempt) to |> You say "([^"]+)")/i;
+            const actionRegex = /(?:> .* (try|attempt|tries|attempts) to use (.*) to |> .* (try|attempt|tries|attempts) to |> .* (say|says) "([^"]+)")/i;
             const match = text.match(actionRegex);
             if (match) {
                 let action;
