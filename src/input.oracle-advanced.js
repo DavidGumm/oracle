@@ -9,7 +9,7 @@ const main = (chance) => {
 
     if (matchDefault) {
         const matchAtChance = text.match(/(?:> .* (?:try|tries|attempt|attempts) @(0?.\d+)) /i);
-        if (matchAtChance[1]) {
+        if (matchAtChance && matchAtChance[1]) {
             chance = parseFloat(matchAtChance[1]);
             text = text.replace("@" + matchAtChance[1] + " ", "");
         }

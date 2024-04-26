@@ -3,12 +3,11 @@
 require("esbuild")
     .build({
         logLevel: "info",
-        entryPoints: ["src/oracle-lite.ts"],
+        entryPoints: ["src/input.oracle-lite.ts"],
         bundle: true,
         outfile: "dist/oracle-lite.js",
-        platform: 'browser', // Specify target platform
-        target: ['es2020', 'chrome58', 'firefox57', 'safari11'], // Specify ECMAScript target and browsers
-        sourcemap: true, // Optional: if you want source maps
+        platform: 'esm', // Specify target platform
         minify: false, // Optional: if you want to minify the output
+        sourcemap: false, // Optional: if you want to generate sourcemaps
     })
     .catch(() => process.exit(1));
