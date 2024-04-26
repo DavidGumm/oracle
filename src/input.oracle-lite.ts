@@ -1,8 +1,7 @@
-const determineOutcome = require("./oracle/lib/determine.outcome.js");
 
-// Every script needs a modifier function
-const modifier = (text) => {
+const module = (text) => {
     const DEFAULT_CHANCE_FOR_SUCCESS = 0.5;
+    const determineOutcome = require("./oracle/lib/determine.outcome.js");
     /**
     * The main application logic to match commands.
     */
@@ -22,4 +21,4 @@ const modifier = (text) => {
     }
     state.memory.frontMemory = main(DEFAULT_CHANCE_FOR_SUCCESS);
 }
-modifier(text);
+module(text)

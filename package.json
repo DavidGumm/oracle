@@ -1,7 +1,13 @@
 {
+  "scripts": {
+    "build:test": "npm run test && npm run build ",
+    "build": "node build",
+    "test": "jest"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
     "@eslint/js": "^9.1.1",
+    "esbuild": "0.20.2",
     "eslint": "^8.57.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.29.1",

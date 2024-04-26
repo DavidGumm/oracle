@@ -122,7 +122,15 @@ const oracle = (state, text, history, storyCards, info) => {
      * @param {number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
      */
     class Leveling {
-        constructor(increaseEnabled, decreaseEnabled, maxRate, minRate, rateOfChange, rateOfChangeFailureMultiplier, decreaseRate) {
+        constructor(
+            increaseEnabled = true,
+            decreaseEnabled = true,
+            maxRate = .95,
+            minRate = .3,
+            rateOfChange = 0.001,
+            rateOfChangeFailureMultiplier = 10,
+            decreaseRate = 0.001 / 6
+        ) {
             this.increaseEnabled = increaseEnabled;
             this.decreaseEnabled = decreaseEnabled;
             this.maxRate = maxRate;
@@ -142,7 +150,13 @@ const oracle = (state, text, history, storyCards, info) => {
      * @param {number} remainingTurns The remaining Cool down turns
      */
     class CoolDown {
-        constructor(enabled, decreaseRatePerAction, failureThreshold, failureCount, remainingTurns) {
+        constructor(
+            enabled = true, //Enable the action cool down subsystem
+            decreaseRatePerAction = 1, // The rate of decrease per turn.
+            failureThreshold = 3, // The failure threshold at which to activate the cool down
+            failureCount = 0, // The current failure count.
+            remainingTurns = 0// Turns remain on cool down.
+        ) {
             this.enabled = enabled;
             this.decreaseRatePerAction = decreaseRatePerAction;
             this.failureThreshold = failureThreshold;
@@ -151,28 +165,58 @@ const oracle = (state, text, history, storyCards, info) => {
         }
     }
 
-    const defaultActionLeveling = () => new Leveling(
-        increaseEnabled = true, // Allow action increase
-        decreaseEnabled = true, // Allow action decrease
-        maxRate = .95, // The actions maximum rate
-        minRate = .3, // The actions minimum rate
-        rateOfChange = 0.001, // The base rate of action change
-        rateOfChangeFailureMultiplier = 10, // The experience failure multiplier
-        decreaseRate = 0.001 / 6 // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
-    )
-
-    const defaultActionCoolDown = () => new CoolDown(
-        true, //Enable the action cool down subsystem
-        1, // The rate of decrease per turn.
-        3, // The failure threshold at which to activate the cool down
-        0, // The current failure count.
-        0 // Turns remain on cool down.
-    )
-
     class ActionHistory {
         constructor(name, actionCount) {
             this.name = name;
             this.actionCount = actionCount;
+        }
+    }
+
+    class ResourceThreshold {
+        constructor(
+            threshold=0, // The threshold for the resource
+            message="" // The message to display when the threshold is reached
+        ) {
+            this.threshold = threshold;
+            this.message = message;
+        }
+    }
+
+    class Resource {
+        constructor(
+            type="", // The type of resource
+            isIncreased=true, // If the resource is increased or deceased over time when the action is used
+            value=0, // The current value of the resource
+            max=0, // The maximum value of the resource
+            min=0, // The minimum value of the resource
+            rate=0, // The rate of change of the resource
+            isCritical=false, // If the resource is critical to the player
+            isConsumable=false, // If the resource is consumed when used
+            isRenewable=false, // If the resource is renewable
+            thresholds=[] // The thresholds for the resource
+        ){
+            this.type = type;
+            this.isIncreased = isIncreased;
+            this.value = value;
+            this.max = max;
+            this.min = min;
+            this.rate = rate;
+            this.isCritical = isCritical;
+            this.isConsumable = isConsumable;
+            this.isRenewable = isRenewable;
+            this.thresholds = thresholds;
+        }
+    }
+
+    class ActionResource {
+        constructor(
+            type="", // The type of resource
+            isIncreasing=true, // If the resource is increasing when the action is used
+            modify=0, // The amount to modify the resource by
+        ) {
+            this.type = type;
+            this.isIncreasing = isIncreasing;
+            this.modify = modify;
         }
     }
 
@@ -190,7 +234,9 @@ const oracle = (state, text, history, storyCards, info) => {
             rate = defaultActionRate(),
             leveling = new Leveling(),
             coolDown = new CoolDown(),
-            note = "") {
+            note = "",
+            isResource = false,
+            resource = new ActionResource()) {
             this.name = name.map(n => n.toLowerCase());
             this.successEndings = successEndings;
             this.failureEndings = failureEndings;
@@ -204,6 +250,8 @@ const oracle = (state, text, history, storyCards, info) => {
             this.memorable = memorable;
             this.knownFor = knownFor;
             this.memorableThreshold = memorableThreshold;
+            this.isResource = isResource;
+            this.resource = resource;
         }
     }
 
@@ -215,7 +263,7 @@ const oracle = (state, text, history, storyCards, info) => {
     }
 
     class Game {
-        constructor(playerActivity, dynamicActions, enableReputationSystem, enableSayCharismaCheck, eventSystem, eventSystemEnabled, authorsNote, actionRate, players, enablePlayerMessage, messages) {
+        constructor(playerActivity, dynamicActions, enableReputationSystem, enableSayCharismaCheck, eventSystem, eventSystemEnabled, authorsNote, actionRate, players, resources, enablePlayerMessage, messages) {
             this.playerActivity = playerActivity;
             this.dynamicActions = dynamicActions;
             this.enableReputationSystem = enableReputationSystem;
@@ -225,6 +273,7 @@ const oracle = (state, text, history, storyCards, info) => {
             this.authorsNote = authorsNote;
             this.actionRate = actionRate;
             this.players = players;
+            this.resources = resources;
             this.enablePlayerMessage = enablePlayerMessage;
             this.messages = messages;
         }
@@ -293,6 +342,8 @@ const oracle = (state, text, history, storyCards, info) => {
                 .2, // The maximum starting bonus
                 .01 // The minimum starting bonus
             ),
+            [],// Players
+            [new Resource()],
             true,
             [], // Start the messages array blank.
         );
@@ -355,9 +406,9 @@ const oracle = (state, text, history, storyCards, info) => {
             ),// START action change section.
             new Action(
                 ["fighting", "combat", "weapon", "hit", "strike", "attack", "counter", "counterattack", "assault", "ambush"],
-                ["brutal efficiency", "deadly precision", "unyielding resolve"],
+                ["is brutal efficiency", "made with deadly precision", "unyielding resolve"],
                 ["misjudged", "ineffective", "reckless"],
-                "You attack with",
+                "The attack",
                 "Your attack proves",
                 "You could die!",
                 .9,
@@ -486,15 +537,11 @@ const oracle = (state, text, history, storyCards, info) => {
      * @param {action} action The action to get the phrase from.
      * @returns The phrase relent to the actions success or failure.
      */
-    const getPhrase = (action) => {
-        const success = fate(action);
-        const successPhrase = action => `[${action.successStart} ${getRandomItem(action.successEndings)}.]`;
-        const failurePhrase = action => `[${action.failureStart} ${getRandomItem(action.failureEndings)} and utterly fail!]`;
-        const note = action => action.note !== "" ? ` [${action.name[0]} Action Note: ${action.note}]` : "";
-        if (action.coolDown.remainingTurns > 0) {
-            return `[${action.coolDownPhrase}]`;
-        }
-        return note(action) + (success ? successPhrase(action) : failurePhrase(action));
+    const getPhrase = (action, who) => {
+        const isSuccess = fate(action);
+        const note = action.note !== "" ? ` [${action.name[0]} Action Note: ${action.note}]` : "";
+        return note + (isSuccess
+            ? `${action.successStart} ${getRandomItem(action.successEndings)}.` : `${action.failureStart} ${getRandomItem(action.failureEndings)}!`);
     }
 
     /**
@@ -512,38 +559,56 @@ const oracle = (state, text, history, storyCards, info) => {
         });
     }
 
+    const processActionResource=(action) => {
+        if (action.resource.type !== "") {
+            const resource = state.player.resources.find(r => r.type === action.resource.type);
+            if (resource) {
+                if (action.resource.isIncreasing) {
+                    resource.value += action.resource.modify;
+                } else {
+                    resource.value -= action.resource.modify;
+                }
+                resource.value = Math.min(resource.max, Math.max(resource.min, resource.value));
+                resource.thresholds.forEach(t => {
+                    if (resource.value >= t.threshold) {
+                        state.game.messages.push(t.message);
+                    }
+                });
+            }
+        }
+    }
+
     /**
      * The action command parse for use as command parse and entry point.
      * @param {string} text The user imputed text.
      */
     const actionParse = (text) => {
-        const actionRegex = /> (.*) (?:(try|tries|attempt|attempts) to use (.*) to |(try|tries|attempt|attempts) to |(?:say|says) "([^"]+)")/i;
+        const actionRegex = /> (.*) (?:(try|tries|attempt|attempts) to use (.*) to |(try|tries|attempt|attempts) to )/i;
+
+        const speechRegex = /> (.*) (?:say|says) "([^"]+)"/i;
+
         const match = text.match(actionRegex);
         state.game.eventSystem.forEach(e => changeEvent(e));
         if (match) {
             let action = null;
-            let name = match[1];
             if (match[3]) {  // If action name is captured
                 action = getActionByName(match[3]);
                 activeTurn(true);
-                processActionsCoolDown(action.name[0]);
-                state.memory.frontMemory = getPhrase(action);
-            } else if (match[5]) {  // If speech is captured
-                if (state.game.enableSayCharismaCheck) {
-                    action = getActionByName("charisma");
-                    activeTurn(false);
-                    processActionsCoolDown(action.name[0]);
-                    state.memory.frontMemory = getPhrase(action);
-                }
             } else {
                 action = getActionByName("default");
                 activeTurn(true);
-                processActionsCoolDown(action.name[0]);
-                state.memory.frontMemory = getPhrase(action);
             }
+            processActionResource(action);
+            processActionsCoolDown(action.name[0]);
+            state.memory.frontMemory = getPhrase(action, match[1]);
+        } else if (speechRegex && state.game.enableSayCharismaCheck) {
+            // If speech is captured
+            const action = getActionByName("charisma");
+            activeTurn(false);
+            processActionsCoolDown(action.name[0]);
+            state.memory.frontMemory = getPhrase(action, speechRegex[1]);
         } else {
-            reduce(0, state.game.playerActivity.threat.active, -1);
-            reduce(0, state.game.playerActivity.threat.inactive, -1);
+            activeTurn(false);
             state.memory.frontMemory = "";  // No relevant action found
         }
     }
@@ -556,6 +621,7 @@ const oracle = (state, text, history, storyCards, info) => {
     }
 
     const reduce = (min, number, amount) => number = Math.max(min, number + amount);
+    const increase = (max, number, amount) => number = Math.min(max, number + amount);
 
     /**
      * Logic for handling the player exhaustion.
@@ -564,15 +630,14 @@ const oracle = (state, text, history, storyCards, info) => {
     const activeTurn = (active) => {
         if (!state.game.playerActivity.exhaustion.enabled) return;
         if (active) {
-            reduce()
             state.game.playerActivity.exhaustion.inactive = 0;
-            state.game.playerActivity.exhaustion.active += 1;
-            state.game.playerActivity.threat.active += 1;
+            increase(Number.MAX_SAFE_INTEGER, state.game.playerActivity.exhaustion.active, 1);
+            increase(Number.MAX_SAFE_INTEGER, state.game.playerActivity.threat.active, 1);
             reduce(0, state.game.playerActivity.threat.inactive, -1);
         } else {
             state.game.playerActivity.exhaustion.active = 0;
-            state.game.playerActivity.exhaustion.inactive += 1;
-            state.game.playerActivity.threat.inactive += 1;
+            increase(Number.MAX_SAFE_INTEGER, state.game.playerActivity.exhaustion.inactive, 1);
+            increase(Number.MAX_SAFE_INTEGER, state.game.playerActivity.threat.inactive, 1);
             reduce(0, state.game.playerActivity.threat.active, -1);
         }
 
@@ -649,10 +714,27 @@ const oracle = (state, text, history, storyCards, info) => {
         return rep;
     }
 
+    const getResourceThresholds = () => {
+        let thresholds = [];
+        state.game.resources.forEach(r => {
+            let lastThresholdMessage = null;
+            r.thresholds.forEach(t => {
+                if (r.value >= t.threshold) {
+                    lastThresholdMessage = t.message;
+                }
+            });
+            if (lastThresholdMessage !== null) {
+                thresholds.push(lastThresholdMessage);
+            }
+        });
+        return thresholds;
+    }
+
     state.memory.authorsNote = [
         getPlayerStatus(),
         ...getEventSystem(),
         ...getReputation(),
+        ...getResourceThresholds(),
         state.game.authorsNote,
     ].filter(e = e => e !== "").join(" ").trim();
 
