@@ -46,10 +46,9 @@ const tester = (state, text, history, storyCards, info) => {
      * @param {number} chance A fraction representing the total probability of success.
      * @returns The message for success or failure.
      */
-    const determineOutcome = (chance, who) => {
-        const random = Math.random();
-        const isSuccess = random > chance;
-        const isCritical = random < DEFAULT_CRITICAL_FAILURE || random > DEFAULT_CRITICAL_SUCCESS;
+    const determineOutcome = (chance, who, value) => {
+        const isSuccess = value > chance;
+        const isCritical = value < DEFAULT_CRITICAL_FAILURE || value > DEFAULT_CRITICAL_SUCCESS;
         const adjective = getRandomItem(isSuccess ?
             ADJECTIVES_CRITICAL_SUCCESS : ADJECTIVES_CRITICAL_FAILURE);
         const message = (isSuccess ? MESSAGE_SUCCESS : MESSAGE_FAILURE) + ((who === "You" || who === "I") ? "" : "s") +
@@ -70,7 +69,7 @@ const tester = (state, text, history, storyCards, info) => {
                 chance = parseFloat(matchAtChance[1]);
                 text = text.replace("@" + matchAtChance[1] + " ", "");
             }
-            return determineOutcome(chance, matchDefault[1]);
+            return determineOutcome(chance, matchDefault[1], Math.random());
         } else {
             return "";
         }
