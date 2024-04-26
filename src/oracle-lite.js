@@ -1,4 +1,4 @@
-const determineOutcome = require("./lib/determine.outcome.js");
+const determineOutcome = require("./oracle/lib/determine.outcome.js");
 
 // Every script needs a modifier function
 const modifier = (text) => {
