@@ -124,15 +124,32 @@ const modifier = (text) => {
             }
         }
 
+
+
+
+
+         /**
+         * Represents a player in the game.
+         * @class
+         */
         class Player {
+            /**
+             * Represents a constructor for the Player class.
+             * @constructor
+             * @param {string} name - The name of the Player.
+             * @param {string} status - The status of the Player.
+             * @param {Array} actions - The actions of the Player.
+             * @param {Array} actionHistory - The action history of the Player.
+             */
             constructor(
-            name = "",
-            actions = []) {
-            this.name = name;
-            this.actions = actions;
-            this.status = "";
-            this.actionHistory = [];
-            this.flags = {preventSuccess: []};
+                name,
+                actions,
+            ) {
+                this.name = name;
+                this.status = status;
+                this.actions = actions;
+                this.actionHistory = actionHistory;
+
             }
         }
 
@@ -163,7 +180,11 @@ const modifier = (text) => {
                 this.players = {};
 
             }
-
+            /**
+             * Returns a player given a name. If no such player exists, a new player is created
+             * @param {string} playerName 
+             * @returns 
+             */
             getPlayer = (playerName) => {
                 //If player is new, add them to the playerlist
                 let player = state.game.players[playerName];
@@ -365,34 +386,51 @@ const modifier = (text) => {
 
 
 /**TO DO:
- *  Remove all references to either leveling or cooldown save for their respective dedicated processing functions
- *  Add logic for initializing leveling/cooldown
- * 
- * 
- * Idea of logic flow
- * 
- * Initialize a barebones game state with an empty player list
- * Create a template player object to be used during initialization of modules
- * Per module:
- *  
- *  
- *  
- *              
- *  
+Remove all references to either leveling or cooldown save for their respective dedicated processing functions
+Add logic for initializing:
+        leveling
+        cooldown
+        threat
+        events
+        exhaustion
+        reputation
+ 
+ 
+
+
+Each module should have:
+        A toggle
+        Class definitions to be appended to either (state.game) or (state.game.players)
+        Necessary helper functions (if needed)
+        A single function to be called on player input
+
+Idea of logic flow:
+ 
+    Initialize a barebones game state with an empty player list
+    Create a template player object to be used during initialization of modules
+    Player template should have all predefined actions
+        Actions should be barebones
+
+    Per module:
+        Check if enabled, if yes:
+        Append neccessary variables/flags to the player template or game object
+    
+ 
+ 
+               this.exhaustion = exhaustion;
+                this.isExhaustionEnabled = isExhaustionEnabled;
+                this.threats = threats;
+                this.isThreatEnabled = isThreatEnabled;
+                this.resources = resources;
+                this.isResourceEnabled = isResourceEnabled;
+
+ 
  */
-//////// Exhaustion System ////////////////////////////////////////////////////////////////////////
-
-        class PlayerActivity {
-            constructor(exhaustion, threat) {
-                this.exhaustion = exhaustion;
-                this.threat = threat;
-            }
-        }
-
 
 
 
 //////// Leveling Module //////////////////////////////////////////////////////////////////////////
+
         
         if (true) {
             /**
@@ -454,8 +492,6 @@ const modifier = (text) => {
         }
 
 ///////// Threat Module ///////////////////////////////////////////////////////////////////////////
-
-
 
         /**
          * The threat system for use during 'low' player activity. The system system is activated off a lack of player action over time.
@@ -533,6 +569,8 @@ const modifier = (text) => {
                 this.message = message;
             }
         }
+
+//////// Reputation Module ////////////////////////////////////////////////////////////////////////
 
 ////////End module addition section////////////////////////////////////////////////////////////////
 
