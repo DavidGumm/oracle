@@ -86,61 +86,6 @@ const modifier = (text) => {
             }
         }
 
-        /**
-         * The event for the event system.
-         * @param {number} chance The chance this can be the event
-         * @param {string} description The description of the event to be presented to the AI
-         */
-        class EventType {
-            constructor(chance, description) {
-                this.chance = chance;
-                this.description = description;
-            }
-        }
-
-        /**
-         * An event system.
-         * @param {string} name The name of id to find the event.
-         * @param {EventType} events An array of events posable in this scenario.
-         * @param {*} chance The likelihood of the event changing.
-         */
-        class EventSystem {
-            constructor(name, events, chance) {
-                this.name = name;
-                this.events = events;
-                this.chance = chance;
-                this.current = getRandomItem(events);
-                this.description = this.current.description;
-                this.isRandom = true
-            }
-        }
-
-        /**
-         * The player exhaustion tracking system.
-         * @param {boolean} enabled If the system is active and in use.
-         * @param {number} threshold The threshold at which the system activates.
-         * @param {number} inactive Turns of inactivity.
-         * @param {number} active Turns of activity.
-         * @param {string} message The message to display when exhausted.
-         */
-        class Exhaustion {
-            constructor(enabled, threshold, inactive, active, message) {
-                this.enabled = enabled;
-                this.threshold = threshold;
-                this.inactive = inactive;
-                this.active = active;
-                this.message = message;
-            }
-        }
-
-        
-
-        
-
-        
-
-        
-
         const defaultActionRate = () => {
             return state.game.actionRate.starting + (Math.random() * (state.game.actionRate.MinBonusRate - state.game.actionRate.MaxBonusRate) + state.game.actionRate.MaxBonusRate)
         }
@@ -178,14 +123,6 @@ const modifier = (text) => {
                 this.preventActionFlags = [];
             }
         }
-
-        class PlayerActivity {
-            constructor(exhaustion, threat) {
-                this.exhaustion = exhaustion;
-                this.threat = threat;
-            }
-        }
-
 
         class Player {
             constructor(
@@ -443,6 +380,14 @@ const modifier = (text) => {
  *              
  *  
  */
+//////// Exhaustion System ////////////////////////////////////////////////////////////////////////
+
+        class PlayerActivity {
+            constructor(exhaustion, threat) {
+                this.exhaustion = exhaustion;
+                this.threat = threat;
+            }
+        }
 
 
 
@@ -456,17 +401,17 @@ const modifier = (text) => {
          * @param {boolean} decreaseEnabled Allow action decrease
          * @param {number} maxRate The actions maximum rate
          * @param {number} minRate The actions minimum rate
-         * @param {number} rateOfChange The base rate of action change
-         * @param {number} rateOfChangeFailureMultiplier The experience failure multiplier
-         * @param {number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+         * @param {number} rateOfChange Starting value for success rate change per use of action
+         * @param {number} rateOfChangeFailureMultiplier A multiplier to apply to rateOfChange when an action fails
+         * @param {number} decreaseRate How fast you lose your success rate when action is not used. I recommend it be the success experience divided by less than the number of actions
          */
             class Leveling {
                 constructor(
-                    increaseEnabled = true, // Allow action increase
-                    decreaseEnabled = true, // Allow action decrease
-                    maxRate = .95, // The actions maximum rate
-                    minRate = .3, // The actions minimum rate
-                    rateOfChange = 0.001, // The base rate of action change
+                    increaseEnabled = true, // Default action increase
+                    decreaseEnabled = true, // Default action decrease
+                    maxRate = .95, // Defauilt action maximum rate
+                    minRate = .3, // Default action minimum rate
+                    rateOfChange = 0.001, // D
                     rateOfChangeFailureMultiplier = 10, // The experience failure multiplier
                     decreaseRate = 0.001 / 6 // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
                 ) {
@@ -535,19 +480,61 @@ const modifier = (text) => {
             }
         }
 
+
+///////// Event Module ////////////////////////////////////////////////////////////////////////////
+
+
+        /**
+         * The event for the event system.
+         * @param {number} chance The chance this can be the event
+         * @param {string} description The description of the event to be presented to the AI
+         */
+        class EventType {
+            constructor(chance, description) {
+                this.chance = chance;
+                this.description = description;
+            }
+        }
+
+        /**
+         * An event system.
+         * @param {string} name The name of id to find the event.
+         * @param {EventType} events An array of events posable in this scenario.
+         * @param {*} chance The likelihood of the event changing.
+         */
+        class EventSystem {
+            constructor(name, events, chance) {
+                this.name = name;
+                this.events = events;
+                this.chance = chance;
+                this.current = getRandomItem(events);
+                this.description = this.current.description;
+                this.isRandom = true
+            }
+        }
+
+//////// Exhaustion Module ////////////////////////////////////////////////////////////////////////
+
+
+        /**
+         * The player exhaustion tracking system.
+         * @param {boolean} enabled If the system is active and in use.
+         * @param {number} threshold The threshold at which the system activates.
+         * @param {number} inactive Turns of inactivity.
+         * @param {number} active Turns of activity.
+         * @param {string} message The message to display when exhausted.
+         */
+        class Exhaustion {
+            constructor(enabled, threshold, inactive, active, message) {
+                this.enabled = enabled;
+                this.threshold = threshold;
+                this.inactive = inactive;
+                this.active = active;
+                this.message = message;
+            }
+        }
+
 ////////End module addition section////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
