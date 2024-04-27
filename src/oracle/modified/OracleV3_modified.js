@@ -161,6 +161,9 @@ const modifier = (text) => {
                 dynamicActions, 
                 enableReputationSystem, 
                 enableSayCharismaCheck, 
+                enableSayCharismaCheck, 
+                eventSystem, eventSystemEnabled, 
+                enableSayCharismaCheck,
                 eventSystem, eventSystemEnabled, 
                 authorsNote, 
                 actionRate, 
@@ -180,22 +183,25 @@ const modifier = (text) => {
                 this.players = {};
 
             }
-            /**
-             * Returns a player given a name. If no such player exists, a new player is created
-             * @param {string} playerName 
-             * @returns 
-             */
-            getPlayer = (playerName) => {
-                //If player is new, add them to the playerlist
-                let player = state.game.players[playerName];
-                if (!player) {
-                    state.game.players.assign(new Player(playerName, ACTIONS));
-                }
-                if (!returnPlayer) {
-                    return player;
-                }
-            }
+
+            
         }
+
+        /**
+        * Returns a player given a name. If no such player exists, a new player is created
+        * @param {string} playerName 
+        * @returns 
+        */
+       const getPlayer = (playerName) => {
+           //If player is new, add them to the playerlist
+           let player = this.players[playerName];
+           if (!player) {
+               state.game.players.assign(new Player(playerName, ACTIONS));
+           }
+           if (!returnPlayer) {
+               return player;
+           }
+       }
 
         const delphicBase = (state, text, history, storyCards, info) => {
             const GAME = new Game(
@@ -222,38 +228,6 @@ const modifier = (text) => {
                 false, // Enable subsystem to allow dynamically added skills during game play.
                 true, // Enable reputation from action use.
                 true, // Enable say to charisma check sub system.
-                [
-                    new EventSystem(
-                        "Natural Weather",
-                        [
-                            new EventType(.05, "It is thundering outside."),
-                            new EventType(.1, "There are clouds and precipitation outside."),
-                            new EventType(.15, "There are clouds outside."),
-                            new EventType(.25, "There is a thick fog outside."),
-                            new EventType(1, "It is clear outside."),
-                        ],
-                        0.1
-                    ),
-                    new EventSystem(
-                        "Feeling",
-                        [
-                            new EventType(.05, "You feel upset."),
-                            new EventType(.10, "You feel betrayed."),
-                            new EventType(.15, "You feel emotional hurt."),
-                            new EventType(.20, "You are sad."),
-                            new EventType(.25, "You are depressed."),
-                            new EventType(.30, "You feel happy."),
-                            new EventType(.35, "You feel evil."),
-                            new EventType(.40, "You feel generous."),
-                            new EventType(.45, "You feel selfish."),
-                            new EventType(.50, "You need attention from another person."),
-                            new EventType(.55, "You need the comfort of home."),
-                            new EventType(1, ""),
-                        ],
-                        0.1
-                    )
-                ],
-                true, // Event system toggle
                 "Style Keywords: Light, breezy, punchy, whimsical. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual.", // The default authors note for the setting.
                 new ActionRate(
                     .4, // The base starting rate for actions
@@ -380,15 +354,25 @@ const modifier = (text) => {
             ),
             // End action change section.
         ];
+
         
-////////Begin module addition section//////////////////////////////////////////////////////////////
+
+
+
+
+        state.game.moduleProcessing = [];
+
+        if (!state.game.playerTemplate) {
+            state.game.playerTemplate = new Player("Template!", ACTIONS);
+        }
+        
+//////// Begin module addition section /////////////////////////////////////////////////////////////
 
 
 
 /**TO DO:
 Remove all references to either leveling or cooldown save for their respective dedicated processing functions
 Add logic for initializing:
-        leveling
         cooldown
         threat
         events
@@ -409,8 +393,7 @@ Idea of logic flow:
     Initialize a barebones game state with an empty player list
     Create a template player object to be used during initialization of modules
     Player template should have all predefined actions
-        Actions should be barebones
-
+        ACTIONS array can contain things from modules, it wont break logic (I think)
     Per module:
         Check if enabled, if yes:
         Append neccessary variables/flags to the player template or game object
@@ -432,8 +415,8 @@ Idea of logic flow:
 //////// Leveling Module //////////////////////////////////////////////////////////////////////////
 
         
-        if (true) {
-            /**
+        
+        /**
          * The leveling information for an action.
          * @param {boolean} increaseEnabled Allow action increase
          * @param {boolean} decreaseEnabled Allow action decrease
@@ -443,30 +426,105 @@ Idea of logic flow:
          * @param {number} rateOfChangeFailureMultiplier A multiplier to apply to rateOfChange when an action fails
          * @param {number} decreaseRate How fast you lose your success rate when action is not used. I recommend it be the success experience divided by less than the number of actions
          */
-            class Leveling {
-                constructor(
-                    increaseEnabled = true, // Default action increase
-                    decreaseEnabled = true, // Default action decrease
-                    maxRate = .95, // Defauilt action maximum rate
-                    minRate = .3, // Default action minimum rate
-                    rateOfChange = 0.001, // D
-                    rateOfChangeFailureMultiplier = 10, // The experience failure multiplier
-                    decreaseRate = 0.001 / 6 // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
-                ) {
-                    this.increaseEnabled = increaseEnabled;
-                    this.decreaseEnabled = decreaseEnabled;
-                    this.maxRate = maxRate;
-                    this.minRate = minRate;
-                    this.rateOfChange = rateOfChange;
-                    this.rateOfChangeFailureMultiplier = rateOfChangeFailureMultiplier;
-                    this.decreaseRate = decreaseRate;
-                }
+        class Leveling {
+            constructor(
+                increaseEnabled,
+                decreaseEnabled,
+                maxRate,
+                minRate,
+                rateOfChange,
+                rateOfChangeFailureMultiplier,
+                decreaseRate,
+            ) {
+                this.increaseEnabled = increaseEnabled;
+                this.decreaseEnabled = decreaseEnabled;
+                this.maxRate = maxRate;
+                this.minRate = minRate;
+                this.rateOfChange = rateOfChange;
+                this.rateOfChangeFailureMultiplier = rateOfChangeFailureMultiplier;
+                this.decreaseRate = decreaseRate;
             }
-
         }
 
-///////// Cooldown Module /////////////////////////////////////////////////////////////////////////
+        
+        /**
+         * Logic for action leveling
+         * @param {*} action Name of the action being processed
+         * @param {boolean} isSuccess Boolean denoting whether the action was successful or not
+         */
+        const processActionLeveling = (activeAction, isSuccess) => {
+        
+            //Active action
+                
+            // Increase the action rate more significantly the lower the current action level is.
+            const newRate = activeAction.leveling.rateOfChange;
+            newRate *= (isSuccess ? 1 : activeAction.leveling.rateOfChangeFailureMultiplier);
+            newRate /= activeAction.leveling.maxRate;
+            newRate += 1;
+            newRate *= activeAction.rate;
 
+
+            //On action success
+            if (isSuccess) {
+                state.player.actions.forEach(a => a.coolDown.failCount = 0);
+                if (action.leveling.increaseEnabled) {
+                    activeAction.rate = checkWithinBounds(newRate, activeAction.leveling.minRate, activeAction.leveling.maxRate);
+                }
+            }
+            //On action failure
+            else {
+                activeAction.rate = checkWithinBounds(newRate, activeAction.leveling.minRate, activeAction.leveling.maxRate);
+            }
+    
+            //Inactive actions
+                state.player.actions.forEach(action => {
+                    if (action.name !== activeAction.name) {
+                        //Decreases skill in actions you don't use
+                        if (action.leveling.decreaseEnabled) {
+                            checkWithinBounds(action.rate - action.leveling.decreaseRate, action.leveling.minRate, action.leveling.maxRate);
+                        }
+                    }
+                });
+        }
+
+        const defaultActionLeveling = () => { new Leveling(
+            {
+                // Allow action increase?
+                increaseEnabled: true, // Default action increase
+                // Allow action decrease?
+                decreaseEnabled: true, // Default action decrease
+                // The actions maximum rate
+                maxRate: 0.95,
+                // The actions minimum rate
+                minRate: 0.3,
+                // The base rate of action change
+                rateOfChange: 0.001,
+                // The experience failure multiplier
+                rateOfChangeFailureMultiplier: 10,
+                // The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+                decreaseRate: 0.001 / 6
+            })}
+
+        if (true) { //<<<<<<<<<      TOGGLE ACTION LEVELING: (true) to turn on. (false) to turn off      <<<<<<<<<//
+
+
+            //Get action leveling into all non-customized actions
+            playerTemplate.actions.forEach(action => {
+                if (!action.leveling) {
+                    action.leveling = defaultActionLeveling();
+                }
+            });
+
+            //Add action leveling into the processing array
+            if (!moduleProcessing.find(processActionLeveling)) {
+                moduleProcessing.push(processActionLeveling);
+            }
+        }
+        
+
+///////// Cooldown Module ///////////////////////////////////////////////////////////////////////// 
+        
+        
         /**
          * The actions cool down subsystem.
          * @param {boolean} enabled Enables the action cool down system
@@ -489,6 +547,35 @@ Idea of logic flow:
                 this.failureCount = failureCount;
                 this.remainingTurns = remainingTurns;
             }
+        }
+
+        /**
+         * Logic for handling non-active actions
+         * @param {string} activeAction The Name of the action being used actively and action being ignored for updates.
+         * @param {boolean} isSuccess Whether or not the action was successful
+         */
+        const processActionCooldown = (activeAction, isSuccess) => {
+            //Active actions
+            
+
+            if (!isSuccess && action.coolDown.enabled) {
+                action.coolDown.failureCount += 1;
+
+                if (action.coolDown.failureCount >= action.coolDown.threshold) {
+                    action.coolDown.remainingTurns = action.coolDown.threshold;
+                }
+            }
+        //Inactive actions
+            
+            //
+            state.player.actions.forEach(action => {
+                if (action.name !== activeAction.name) {
+                    //lowers cooldown timer for all actions that need it
+                    if (action.coolDown > 0) {
+                        action.coolDown -= action.coolDown.decreaseRatePerAction;
+                    }
+                }
+            });
         }
 
 ///////// Threat Module ///////////////////////////////////////////////////////////////////////////
@@ -517,37 +604,91 @@ Idea of logic flow:
         }
 
 
-///////// Event Module ////////////////////////////////////////////////////////////////////////////
+//////// Event Module /////////////////////////////////////////////////////////////////////////////
+
+        if (true) { //Toggle Event Module - (true) for on, (false) for off
 
 
-        /**
-         * The event for the event system.
-         * @param {number} chance The chance this can be the event
-         * @param {string} description The description of the event to be presented to the AI
-         */
-        class EventType {
-            constructor(chance, description) {
-                this.chance = chance;
-                this.description = description;
+            /**
+             * The event for the event system.
+             * @param {number} chance The chance this can be the event
+             * @param {string} description The description of the event to be presented to the AI
+             */
+            class EventInstance {
+                constructor(chance, description) {
+                    this.chance = chance;
+                    this.description = description;
+                }
             }
+
+            /**
+             * An event system.
+             * @param {string} name The name of id to find the event.
+             * @param {EventType} events An array of events posable in this scenario.
+             * @param {*} chance The likelihood of the event changing.
+             */
+            class EventType {
+                constructor(name, events, chance) {
+                    this.name = name;
+                    this.events = events;
+                    this.chance = chance;
+                    this.current = getRandomItem(events);
+                    this.description = this.current.description;
+                    this.isRandom = true
+                }
+
+            }
+
+            const EVENTS = [ 
+                new EventType(
+                    "Natural Weather",
+                    [
+                        new EventType(.05, "It is thundering outside."),
+                        new EventType(.1, "There are clouds and precipitation outside."),
+                        new EventType(.15, "There are clouds outside."),
+                        new EventType(.25, "There is a thick fog outside."),
+                        new EventType(1, "It is clear outside."),
+                    ],
+                    0.1
+                ),
+                new EventType(
+                    "Feeling",
+                    [
+                        new EventType(.05, "You feel upset."),
+                        new EventType(.10, "You feel betrayed."),
+                        new EventType(.15, "You feel emotional hurt."),
+                        new EventType(.20, "You are sad."),
+                        new EventType(.25, "You are depressed."),
+                        new EventType(.30, "You feel happy."),
+                        new EventType(.35, "You feel evil."),
+                        new EventType(.40, "You feel generous."),
+                        new EventType(.45, "You feel selfish."),
+                        new EventType(.50, "You need attention from another person."),
+                        new EventType(.55, "You need the comfort of home."),
+                        new EventType(1, ""),
+                    ],
+                    0.1
+                )
+            ];
+
+            //Initialize Event Module
+            if (!state.game.eventSystem) {
+                state.game.eventSystem = EVENTS;
+            }
+
+        
         }
 
         /**
-         * An event system.
-         * @param {string} name The name of id to find the event.
-         * @param {EventType} events An array of events posable in this scenario.
-         * @param {*} chance The likelihood of the event changing.
-         */
-        class EventSystem {
-            constructor(name, events, chance) {
-                this.name = name;
-                this.events = events;
-                this.chance = chance;
-                this.current = getRandomItem(events);
-                this.description = this.current.description;
-                this.isRandom = true
+        * Get currently active events.
+        */
+        const getEventSystem = () => {
+            if (state.game.eventSystemEnabled) {
+                return state.game.eventSystem.map(e => e.description);
             }
+            return [];
         }
+
 
 //////// Exhaustion Module ////////////////////////////////////////////////////////////////////////
 
@@ -609,15 +750,6 @@ Idea of logic flow:
         }
 
 
-        /**
-         * Get currently active events.
-        */
-        const getEventSystem = () => {
-            if (state.game.eventSystemEnabled) {
-                return state.game.eventSystem.map(e => e.description);
-            }
-            return [];
-        }
 
         /**
          * Gets the players status.
@@ -708,77 +840,10 @@ Idea of logic flow:
             }
         }
 
-
-        // Adjust a action's success rate dynamically based on outcome
-        /**
-         * Logic for adjusting an active actions leveling and cooldown
-         * @param {*} action Name of the action being processed
-         * @param {*} isSuccess Boolean denoting whether the action was successful or not
-         */
-        const processActionLeveling = (activeAction, isSuccess) => {
         
-        //Active action
-            
-            // Increase the action rate more significantly the lower the current action level is.
-            const newRate = activeAction.leveling.rateOfChange;
-            newRate *= (isSuccess ? 1 : activeAction.leveling.rateOfChangeFailureMultiplier);
-            newRate /= activeAction.leveling.maxRate;
-            newRate += 1;
-            newRate *= activeAction.rate;
 
 
-            //On action success
-            if (isSuccess) {
-                state.player.actions.forEach(a => a.coolDown.failCount = 0);
-                if (action.leveling.increaseEnabled) {
-                    activeAction.rate = checkWithinBounds(newRate, activeAction.leveling.minRate, activeAction.leveling.maxRate);
-                }
-            }
-            //On action failure
-            else {
-                activeAction.rate = checkWithinBounds(newRate, activeAction.leveling.minRate, activeAction.leveling.maxRate);
-            }
-
-        //Inactive actions
-            state.player.actions.forEach(action => {
-                if (action.name !== activeAction.name) {
-                    //Decreases skill in actions you don't use
-                    if (action.leveling.decreaseEnabled) {
-                        checkWithinBounds(action.rate + action.leveling.decreaseRate, action.leveling.minRate, action.leveling.maxRate);
-                    }
-                }
-            });
-        }
-
-
-        /**
-         * Logic for handling non-active actions
-         * @param {string} activeAction The Name of the action being used actively and action being ignored for updates.
-         * @param {boolean} isSuccess Whether or not the action was successful
-         */
-        const processActionCooldown = (activeAction, isSuccess) => {
-            //Active actions
-            
-
-            if (!isSuccess && action.coolDown.enabled) {
-                action.coolDown.failureCount += 1;
-
-                if (action.coolDown.failureCount >= action.coolDown.threshold) {
-                    action.coolDown.remainingTurns = action.coolDown.threshold;
-                }
-            }
-        //Inactive actions
-            
-            //
-            state.player.actions.forEach(action => {
-                if (action.name !== activeAction.name) {
-                    //lowers cooldown timer for all actions that need it
-                    if (action.coolDown > 0) {
-                        action.coolDown -= action.coolDown.decreaseRatePerAction;
-                    }
-                }
-            });
-        }
+        
 
 
         /**
@@ -827,7 +892,7 @@ Idea of logic flow:
                 let action = null;
                 let playerName = match[1];
                 let isSuccess;
-                let player = getPlayerByName(playerName);
+                let player = state.game.getPlayer(playerName);
 
                 if (match[3]) {  // If action name is captured
 
