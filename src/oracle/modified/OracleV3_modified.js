@@ -4,22 +4,6 @@ const modifier = (text) => {
         // Helper functions
         const getRandomItem = arr => arr[Math.floor(Math.random() * arr.length)];
 
-        const changeEvent = (eventSystem) => {
-            if (Math.random() < eventSystem.chance) {
-                if (eventSystem.isRandom) {
-                    const random = Math.random();
-                    eventSystem.events.every(e => {
-                        if (random < e.chance) {
-                            eventSystem.current = e;
-                            eventSystem.description = e.description;
-                            return false;
-                        }
-                    });
-                } else {
-                    eventSystem.current = getNextItem(eventSystem.events, eventSystem.events.indexOf(e => e.description === eventSystem.current.description));
-                }
-            }
-        }
 
         const getNextItem = (arr, currentIndex) => {
             if (!arr.length) {
@@ -606,87 +590,115 @@ Idea of logic flow:
 
 //////// Event Module /////////////////////////////////////////////////////////////////////////////
 
-        if (true) { //Toggle Event Module - (true) for on, (false) for off
-
-
-            /**
-             * The event for the event system.
-             * @param {number} chance The chance this can be the event
-             * @param {string} description The description of the event to be presented to the AI
-             */
-            class EventInstance {
-                constructor(chance, description) {
-                    this.chance = chance;
-                    this.description = description;
-                }
-            }
-
-            /**
-             * An event system.
-             * @param {string} name The name of id to find the event.
-             * @param {EventType} events An array of events posable in this scenario.
-             * @param {*} chance The likelihood of the event changing.
-             */
-            class EventType {
-                constructor(name, events, chance) {
-                    this.name = name;
-                    this.events = events;
-                    this.chance = chance;
-                    this.current = getRandomItem(events);
-                    this.description = this.current.description;
-                    this.isRandom = true
-                }
-
-            }
-
-            const EVENTS = [ 
-                new EventType(
-                    "Natural Weather",
-                    [
-                        new EventType(.05, "It is thundering outside."),
-                        new EventType(.1, "There are clouds and precipitation outside."),
-                        new EventType(.15, "There are clouds outside."),
-                        new EventType(.25, "There is a thick fog outside."),
-                        new EventType(1, "It is clear outside."),
-                    ],
-                    0.1
-                ),
-                new EventType(
-                    "Feeling",
-                    [
-                        new EventType(.05, "You feel upset."),
-                        new EventType(.10, "You feel betrayed."),
-                        new EventType(.15, "You feel emotional hurt."),
-                        new EventType(.20, "You are sad."),
-                        new EventType(.25, "You are depressed."),
-                        new EventType(.30, "You feel happy."),
-                        new EventType(.35, "You feel evil."),
-                        new EventType(.40, "You feel generous."),
-                        new EventType(.45, "You feel selfish."),
-                        new EventType(.50, "You need attention from another person."),
-                        new EventType(.55, "You need the comfort of home."),
-                        new EventType(1, ""),
-                    ],
-                    0.1
-                )
-            ];
-
-            //Initialize Event Module
-            if (!state.game.eventSystem) {
-                state.game.eventSystem = EVENTS;
-            }
-
         
+
+
+        /**
+         * The event for the event system.
+         * @param {number} chance The chance this can be the event
+         * @param {string} description The description of the event to be presented to the AI
+         */
+        class EventInstance {
+            constructor(chance, description) {
+                this.chance = chance;
+                this.description = description;
+            }
         }
+
+        /**
+         * An event system.
+         * @param {string} name The name of id to find the event.
+         * @param {EventType} events An array of events posable in this scenario.
+         * @param {*} chance The likelihood of the event changing.
+         */
+        class EventType {
+            constructor(name, events, chance) {
+                this.name = name;
+                this.events = events;
+                this.chance = chance;
+                this.current = getRandomItem(events);
+                this.description = this.current.description;
+                this.isRandom = true
+            }
+
+        }
+
+        const EVENTS = [ 
+            new EventType(
+                "Natural Weather",
+                [
+                    new EventType(.05, "It is thundering outside."),
+                    new EventType(.1, "There are clouds and precipitation outside."),
+                    new EventType(.15, "There are clouds outside."),
+                    new EventType(.25, "There is a thick fog outside."),
+                    new EventType(1, "It is clear outside."),
+                ],
+                0.1
+            ),
+            new EventType(
+                "Feeling",
+                [
+                    new EventType(.05, "You feel upset."),
+                    new EventType(.10, "You feel betrayed."),
+                    new EventType(.15, "You feel emotional hurt."),
+                    new EventType(.20, "You are sad."),
+                    new EventType(.25, "You are depressed."),
+                    new EventType(.30, "You feel happy."),
+                    new EventType(.35, "You feel evil."),
+                    new EventType(.40, "You feel generous."),
+                    new EventType(.45, "You feel selfish."),
+                    new EventType(.50, "You need attention from another person."),
+                    new EventType(.55, "You need the comfort of home."),
+                    new EventType(1, ""),
+                ],
+                0.1
+            )
+        ];
+
+        /**
+         * 
+         * @param {*} eventSystem 
+         */
+        const processEvents = () => {
+            state.game.eventSystem.forEach((eventSystem) => {
+                if (Math.random() < eventSystem.chance) {
+                    if (eventSystem.isRandom) {
+                        const random = Math.random();
+                        eventSystem.events.every(e => {
+                            if (random < e.chance) {
+                                eventSystem.current = e;
+                                eventSystem.description = e.description;
+                                return false;
+                            }
+                        });
+                    } else {
+                        eventSystem.current = getNextItem(eventSystem.events, eventSystem.events.indexOf(e => e.description === eventSystem.current.description));
+                    }
+                }
+            })};
+
 
         /**
         * Get currently active events.
         */
-        const getEventSystem = () => {
-            if (state.game.eventSystemEnabled) {
+        const getEvent = () => {
+            if (state.game) {
                 return state.game.eventSystem.map(e => e.description);
             }
             return [];
+        }
+
+        if (true) { //<<<<<<<<<      TOGGLE EVENTS: (true) to turn on. (false) to turn off      <<<<<<<<<//
+
+            //Add action leveling into the processing array
+            if (!moduleProcessing.find(processEvents)) {
+                moduleProcessing.push(processEvents);
+            }
+
+            if(!state.game.eventSystem) {
+                state.game.eventSystem = EVENTS;
+            }
+
         }
 
 
@@ -886,7 +898,6 @@ Idea of logic flow:
             
             const actionRegex = /> (.*) (?:(try|tries|attempt|attempts) to use (.*) to |(try|tries|attempt|attempts) to |(?:say|says) "([^"]+)")/i;
             const match = text.match(actionRegex);
-            state.game.eventSystem.forEach(e => changeEvent(e));
 
             if (match) {
                 let action = null;
@@ -945,7 +956,7 @@ Idea of logic flow:
 
         state.memory.authorsNote = [
             getPlayerStatus(),
-            getEventSystem(),
+            getEvent(),
             getReputation(),
             state.game.authorsNote,
         ].filter(e = e => e !== "").join(" ").trim();
