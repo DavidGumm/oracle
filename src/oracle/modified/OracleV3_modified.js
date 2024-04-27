@@ -598,7 +598,7 @@ Idea of logic flow:
          * @param {number} chance The chance this can be the event
          * @param {string} description The description of the event to be presented to the AI
          */
-        class EventInstance {
+        class Event {
             constructor(chance, description) {
                 this.chance = chance;
                 this.description = description;
@@ -627,29 +627,29 @@ Idea of logic flow:
             new EventType(
                 "Natural Weather",
                 [
-                    new EventType(.05, "It is thundering outside."),
-                    new EventType(.1, "There are clouds and precipitation outside."),
-                    new EventType(.15, "There are clouds outside."),
-                    new EventType(.25, "There is a thick fog outside."),
-                    new EventType(1, "It is clear outside."),
+                    new Event(.05, "It is thundering outside."),
+                    new Event(.1, "There are clouds and precipitation outside."),
+                    new Event(.15, "There are clouds outside."),
+                    new Event(.25, "There is a thick fog outside."),
+                    new Event(1, "It is clear outside."),
                 ],
                 0.1
             ),
-            new EventType(
+            new Event(
                 "Feeling",
                 [
-                    new EventType(.05, "You feel upset."),
-                    new EventType(.10, "You feel betrayed."),
-                    new EventType(.15, "You feel emotional hurt."),
-                    new EventType(.20, "You are sad."),
-                    new EventType(.25, "You are depressed."),
-                    new EventType(.30, "You feel happy."),
-                    new EventType(.35, "You feel evil."),
-                    new EventType(.40, "You feel generous."),
-                    new EventType(.45, "You feel selfish."),
-                    new EventType(.50, "You need attention from another person."),
-                    new EventType(.55, "You need the comfort of home."),
-                    new EventType(1, ""),
+                    new Event(.05, "You feel upset."),
+                    new Event(.10, "You feel betrayed."),
+                    new Event(.15, "You feel emotional hurt."),
+                    new Event(.20, "You are sad."),
+                    new Event(.25, "You are depressed."),
+                    new Event(.30, "You feel happy."),
+                    new Event(.35, "You feel evil."),
+                    new Event(.40, "You feel generous."),
+                    new Event(.45, "You feel selfish."),
+                    new Event(.50, "You need attention from another person."),
+                    new Event(.55, "You need the comfort of home."),
+                    new Event(1, ""),
                 ],
                 0.1
             )
