@@ -4,7 +4,6 @@ const modifier = (text) => {
     if (!actionMatch) {
         return { text };
     }
-
     const activePlayerName = actionMatch[1];
     const isDoAction = actionMatch[3] || (!actionMatch[4] && actionMatch);
     const isSpeechAction = actionMatch[4] !== undefined;
