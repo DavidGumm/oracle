@@ -29,7 +29,7 @@ const frontMemoryMoveMatch = /Your movement is successfully and (graceful|fluid|
 const frontMemorySpeechMatch = /You speak with (persuasive|charm|conviction).|You try to be persuasive, but your words are (awkward|unconvincing|ineffectual)!/;
 const frontMemoryDefaultMatch = /Successfully, you manage to be (masterful|remarkable|flawless).|Despite your efforts, you end up being (clumsy|inept|futile)!/;
 
-for (let index = 0; index < 1; index++) {
+for (let index = 0; index < 60; index++) {
     test("Test Fighting action", () => {
         const text = "> You try to use fighting to defend yourself.";
         const results = tester(state, text, history, storyCards, info);
@@ -83,6 +83,18 @@ for (let index = 0; index < 1; index++) {
         const results = tester(state, text, history, storyCards, info);
         //expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch(frontMemorySpeechMatch);
+        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.text).toBe(text);
+        expect(results.history).toMatchObject(history);
+        expect(results.storyCards).toMatchObject(storyCards);
+        expect(results.info).toMatchObject(info);
+    });
+
+    test("Test none action", () => {
+        const text = "I move the rock.";
+        const results = tester(state, text, history, storyCards, info);
+        //expect(results.state).toMatchObject(state);
+        expect(results.state.memory.frontMemory).toMatch("");
         expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);

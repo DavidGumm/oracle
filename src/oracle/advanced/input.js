@@ -1,14 +1,16 @@
 // Every script needs a modifier function
 const modifier = (text) => {
-    const actionMatch = /(?:> (.*) (try|tries|attempt|attempts) (?:to use (.*) to |to )|> (.*) (?:say|says) "([^"]+)")/i.test(text);
-
+    const actionMatch = text.match(/> (.*) ((?:try|tries|attempt|attempts) (?:to use (.*) to |to )|(?:say|says) ("(?:[^"]+)"))/i);
     if (!actionMatch) {
-        return { text }
+        return { text };
     }
+
     const activePlayerName = actionMatch[1];
+    const isDoAction = actionMatch[3] || (!actionMatch[4] && actionMatch);
+    const isSpeechAction = actionMatch[4] !== undefined;
 
     const defaultActionRate = {
-        starting: .4,
+        starting: .2,
         MaxBonusRate: .2,
         MinBonusRate: .01,
         max: .95,
@@ -289,6 +291,7 @@ const modifier = (text) => {
         messages: []
     };
 
+    // DO NOT CHANGE ANYTHING BELOW THIS LINE!
     // Helper functions
     function getRandomItem(arr) {
         return arr[Math.floor(Math.random() * arr.length)] || arr[0];
@@ -496,14 +499,11 @@ const modifier = (text) => {
         }
     }
 
-
-
     class PlayerActivity {
         constructor(playerActivity) {
             this.exhaustion = playerActivity.exhaustion;
             this.threat = playerActivity.threat;
         }
-
     }
 
     /**
@@ -538,28 +538,25 @@ const modifier = (text) => {
     }
 
     const delphicBase = () => {
-
         // Set the default game state
         if (!state.game) {
             state.game = defaultGame;
         }
-        // Check if player state exists, if not, initialize
-        if (!state.player) {
-            state.player = new Player(defaultPlayer());
-        }
         // Ensure state.memory.authorsNote is blank and ready.
-        if (!state.memory.authorsNote) {
-            state.memory.authorsNote = "";
-        }
+        state.memory.authorsNote = "";
+        // Ensure state.memory.frontMemory is blank and ready.
+        state.memory.frontMemory = "";
         // Ensure state.message is blank and ready.
-        state.message = "";
+        state.message = undefined;
     }
+
     delphicBase();
+
     const game = new Game(state.game);
 
     const getActionByName = name => {
-        if (game.dynamicActions) {
-            let action = activePlayer.actions.find(action => action.name.includes(name.toLowerCase()));
+        if (game.dynamicActions && name !== "default" && name !== "charisma" && name !== "") {
+            let action = activePlayer.actions.find(a => a.name.includes(name.toLowerCase()));
             if (!action) {
                 // If skill does not exist, create it with default attributes.
                 let names = [];
@@ -569,25 +566,25 @@ const modifier = (text) => {
             }
             return action;
         }
-        return activePlayer.actions.find(action => action.name.includes(name.toLowerCase())) || activePlayer.actions[0];
+        return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
     }
 
     // Adjust a action's success rate dynamically based on outcome
     const setActionState = (action, isSuccess) => {
         // Increase the action rate more significantly the lower the current action level is.
-        const calculate = isSuccess => {
+        const calculateNewRate = isSuccess => {
             return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
         }
-        const newRate = calculate(isSuccess);
-        if (isSuccess) {
-            activePlayer.actions.forEach(a => a.coolDown.failCount = 0);
-            if (action.leveling.increaseEnabled) {
-                action.rate = Math.min(action.rate + newRate, action.leveling.maxRate);
-            }
-        } else {
-            if (action.coolDown.enabled) {
+        adjustActionLevel(action, calculateNewRate(isSuccess), isSuccess);
+        adjustActionCoolDown(action, isSuccess);
+    }
+
+    const adjustActionCoolDown = (action, isSuccess) => {
+        if (action.coolDown.enabled) {
+            if (isSuccess) {
+                activePlayer.actions.forEach(a => a.coolDown.failCount = 0);
+            } else {
                 action.coolDown.failureCount += 1;
-                decreaseActionRate(action, calculate(isSuccess));
                 if (action.coolDown.failureCount >= action.coolDown.threshold) {
                     action.coolDown.remainingTurns = action.coolDown.threshold;
                 }
@@ -595,9 +592,12 @@ const modifier = (text) => {
         }
     }
 
-    const decreaseActionRate = (action, newRate) => {
-        if (action.leveling.decreaseEnabled) {
-            reduce(action.leveling.minRate, action.rate, newRate);
+    const adjustActionLevel = (action, newRate, isSuccess) => {
+        if (isSuccess && action.leveling.increaseEnabled) {
+            checkWithinBounds(newRate, action.leveling.maxRate);
+        }
+        if (!isSuccess && action.leveling.decreaseEnabled) {
+            checkWithinBounds(newRate, action.leveling.minRate);
         }
     }
 
@@ -615,7 +615,7 @@ const modifier = (text) => {
             processReputation(action);
         }
         setActionState(action, success);
-        const message = success ? `Your ${action.name[0]} check succeeded.` : `Your ${action.name[0]} check failed.`
+        const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
         game.messages = [message];
         return success;
     }
@@ -637,11 +637,8 @@ const modifier = (text) => {
      */
     const processActionsCoolDown = (name) => {
         activePlayer.actions.forEach(a => {
-            if (a.name !== name) {
-                decreaseActionRate(a, -a.leveling.decreaseRate);
-                if (a.coolDown > 0) {
-                    a.coolDown += -a.coolDown.decreaseRatePerAction;
-                }
+            if (a.name !== name && a.coolDown > 0) {
+                a.coolDown += -a.coolDown.decreaseRatePerAction;
             }
         });
     }
@@ -688,14 +685,13 @@ const modifier = (text) => {
         if (!activePlayer.exhaustion.enabled) return;
         if (active) {
             activePlayer.exhaustion.inactive = 0;
-            increase(Number.MAX_SAFE_INTEGER, activePlayer.exhaustion.active, 1);
-            increase(Number.MAX_SAFE_INTEGER, activePlayer.threat.active, 1);
-            reduce(0, activePlayer.threat.inactive, -1);
+            activePlayer.exhaustion.active = checkWithinBounds(activePlayer.exhaustion.active + 1, 0, Number.MAX_SAFE_INTEGER);
+            activePlayer.threat.active = checkWithinBounds(activePlayer.threat.active + 1, 0, Number.MAX_SAFE_INTEGER);
+            activePlayer.threat.inactive = checkWithinBounds(activePlayer.threat.inactive - 1, 0, Number.MAX_SAFE_INTEGER);
         } else {
             activePlayer.exhaustion.active = 0;
-            increase(Number.MAX_SAFE_INTEGER, activePlayer.exhaustion.inactive, 1);
-            increase(Number.MAX_SAFE_INTEGER, activePlayer.threat.inactive, 1);
-            reduce(0, activePlayer.threat.active, -1);
+            activePlayer.exhaustion.inactive = checkWithinBounds(activePlayer.exhaustion.inactive + 1, 0, Number.MAX_SAFE_INTEGER);
+            activePlayer.threat.active = checkWithinBounds(activePlayer.threat.active - 1, 0, Number.MAX_SAFE_INTEGER);
         }
 
         if (activePlayer.inactive > activePlayer.exhaustion.threshold) {
@@ -712,25 +708,12 @@ const modifier = (text) => {
      * @param {string} text The user imputed text.
      */
     const actionParse = () => {
-        const actionRegex = /> (.*) (try|tries|attempt|attempts) (?:to use (.*) to |to )/i;
-
-        const speechRegex = /> (.*) (?:say|says) "([^"]+)"/i;
-
-        const match = text.match(actionRegex);
-
-        if (match) {
-            let action = null;
-            if (match[3]) {  // If action name is captured
-                action = getActionByName(match[3]);
-                processPlayerActivity(true);
-            } else {
-                action = getActionByName("default");
-                processPlayerActivity(true);
-            }
+        if (isDoAction && !isSpeechAction) {
+            const action = getActionByName((actionMatch[3] || "default"));
             processActionResource(action);
             processActionsCoolDown(action.name[0]);
             return getPhrase(action, determineFate(action));
-        } else if (speechRegex && game.enableSayCharismaCheck) {
+        } else if (isSpeechAction && game.enableSayCharismaCheck) {
             // If speech is captured
             const action = getActionByName("charisma");
             processPlayerActivity(false);
@@ -740,7 +723,6 @@ const modifier = (text) => {
             processPlayerActivity(false);
             return "";  // No relevant action found
         }
-        return "";
     }
 
     const processReputation = (action) => {
@@ -750,10 +732,26 @@ const modifier = (text) => {
         }
     }
 
-    const reduce = (min, number, amount) => number = Math.max(min, number + amount);
-    const increase = (max, number, amount) => number = Math.min(max, number + amount);
-
-
+    /**
+     * Accounts for both an upper and lower bound
+     *
+     * @param {number} number number to check
+     * @param {number} lowerBound
+     * @param {number} upperBound
+     * @returns Adjusted number
+     *  ----------------------------------
+     * Accounts only for the lower bound
+     * @param {number} number number to check
+     * @param {number} lowerBound required
+     * @returns Adjusted number
+     */
+    const checkWithinBounds = (number, lowerBound, upperBound) => {
+        if (upperBound === undefined) {
+            return Math.max(number, lowerBound);
+        } else {
+            return Math.min(Math.max(number, lowerBound), upperBound);
+        }
+    }
 
     /**
      * Get currently active events.
@@ -848,7 +846,7 @@ const modifier = (text) => {
     // Notify the player of the status.
     if (game.enablePlayerMessage) {
         state.message = [game.messages, ...getPlayerStatusMessage()].filter(m => m !== "").join("\n").trim();
-        game.message = [];
+        game.messages = [];
     }
     state.game = game;
     return { text }
