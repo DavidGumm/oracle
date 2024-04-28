@@ -1,11 +1,13 @@
 const tester = (state, text, history, storyCards, info) => {
 
-    const actionMatch = /(?:> (.*) (try|tries|attempt|attempts) (?:to use (.*) to |to )|> (.*) (?:say|says) "([^"]+)")/i.test(text);
+    const actionMatch = /> (.*) (?:(?:try|tries|attempt|attempts) (?:to use (.*) to |to )|(?:say|says) ("(?:[^"]+)"))/i.test(text);
 
     if (!actionMatch) {
         return { state, text, history, storyCards, info }
     }
     const activePlayerName = actionMatch[1];
+    const isSpeech = actionMatch[3] !== undefined;
+    const isDoAction = !isSpeech;
 
     const defaultActionRate = {
         starting: .4,
@@ -15,6 +17,8 @@ const tester = (state, text, history, storyCards, info) => {
         min: .05
     }
 
+    // This is the default rate for a new action.
+    // Do not change this function.
     const startingActionRate = () => {
         return defaultActionRate.starting + (Math.random() * (defaultActionRate.MinBonusRate - defaultActionRate.MaxBonusRate) + defaultActionRate.MaxBonusRate)
     }
@@ -194,6 +198,7 @@ const tester = (state, text, history, storyCards, info) => {
         }
     ]
 
+    // DO NOT CHANGE THIS FUNCTION!
     const defaultActions = () => {
         return [
             defaultAction,
@@ -202,6 +207,7 @@ const tester = (state, text, history, storyCards, info) => {
         ];
     }
 
+    // DO NOT CHANGE THIS FUNCTION!
     const defaultPlayer = (name = "You") => {
         return {
             name: name,
@@ -285,6 +291,7 @@ const tester = (state, text, history, storyCards, info) => {
         messages: []
     };
 
+    // DO NOT CHANGE ANYTHING BELOW THIS LINE!
     // Helper functions
     function getRandomItem(arr) {
         return arr[Math.floor(Math.random() * arr.length)] || arr[0];
@@ -575,15 +582,16 @@ const tester = (state, text, history, storyCards, info) => {
             return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
         }
         const newRate = calculate(isSuccess);
-        if (isSuccess) {
-            activePlayer.actions.forEach(a => a.coolDown.failCount = 0);
-            if (action.leveling.increaseEnabled) {
-                action.rate = Math.min(action.rate + newRate, action.leveling.maxRate);
-            }
-        } else {
-            if (action.coolDown.enabled) {
+        adjustActionLevel(action, calculate(isSuccess), isSuccess);
+        adjustActionCoolDown(action, isSuccess);
+    }
+
+    const adjustActionCoolDown = (action, isSuccess) => {
+        if (action.coolDown.enabled) {
+            if (isSuccess) {
+                activePlayer.actions.forEach(a => a.coolDown.failCount = 0);
+            } else {
                 action.coolDown.failureCount += 1;
-                decreaseActionRate(action, calculate(isSuccess));
                 if (action.coolDown.failureCount >= action.coolDown.threshold) {
                     action.coolDown.remainingTurns = action.coolDown.threshold;
                 }
@@ -591,9 +599,12 @@ const tester = (state, text, history, storyCards, info) => {
         }
     }
 
-    const decreaseActionRate = (action, newRate) => {
-        if (action.leveling.decreaseEnabled) {
-            reduce(action.leveling.minRate, action.rate, newRate);
+    const adjustActionLevel = (action, newRate, isSuccess) => {
+        if (isSuccess && action.leveling.increaseEnabled) {
+            checkWithinBounds(newRate, action.leveling.minRate);
+        }
+        if (!isSuccess && action.leveling.decreaseEnabled) {
+            checkWithinBounds(newRate, action.leveling.minRate);
         }
     }
 
@@ -708,16 +719,10 @@ const tester = (state, text, history, storyCards, info) => {
      * @param {string} text The user imputed text.
      */
     const actionParse = () => {
-        const actionRegex = /> (.*) (try|tries|attempt|attempts) (?:to use (.*) to |to )/i;
-
-        const speechRegex = /> (.*) (?:say|says) "([^"]+)"/i;
-
-        const match = text.match(actionRegex);
-
-        if (match) {
+        if (isDoAction) {
             let action = null;
-            if (match[3]) {  // If action name is captured
-                action = getActionByName(match[3]);
+            if (actionMatch[2]) {  // If action name is captured
+                action = getActionByName(actionMatch[2]);
                 processPlayerActivity(true);
             } else {
                 action = getActionByName("default");
@@ -726,7 +731,7 @@ const tester = (state, text, history, storyCards, info) => {
             processActionResource(action);
             processActionsCoolDown(action.name[0]);
             return getPhrase(action, determineFate(action));
-        } else if (speechRegex && game.enableSayCharismaCheck) {
+        } else if (isSpeech && game.enableSayCharismaCheck) {
             // If speech is captured
             const action = getActionByName("charisma");
             processPlayerActivity(false);
@@ -736,7 +741,6 @@ const tester = (state, text, history, storyCards, info) => {
             processPlayerActivity(false);
             return "";  // No relevant action found
         }
-        return "";
     }
 
     const processReputation = (action) => {
@@ -749,7 +753,26 @@ const tester = (state, text, history, storyCards, info) => {
     const reduce = (min, number, amount) => number = Math.max(min, number + amount);
     const increase = (max, number, amount) => number = Math.min(max, number + amount);
 
-
+/**
+ * Accounts for both an upper and lower bound
+ *
+ * @param {number} number number to check
+ * @param {number} lowerBound
+ * @param {number} upperBound 
+ * @returns Adjusted number
+ *  ----------------------------------
+ * Accounts only for the lower bound
+ * @param {number} number number to check
+ * @param {number} lowerBound required
+ * @returns Adjusted number
+ */
+const checkWithinBounds = (number, lowerBound, upperBound) => {
+    if (upperBound === undefined) {
+        return Math.max(number, lowerBound);
+    } else {
+        return Math.min(Math.max(number, lowerBound), upperBound);
+    }
+}
 
     /**
      * Get currently active events.

@@ -15,6 +15,8 @@ const modifier = (text) => {
         min: .05
     }
 
+    // This is the default rate for a new action.
+    // Do not change this function.
     const startingActionRate = () => {
         return defaultActionRate.starting + (Math.random() * (defaultActionRate.MinBonusRate - defaultActionRate.MaxBonusRate) + defaultActionRate.MaxBonusRate)
     }
@@ -194,6 +196,7 @@ const modifier = (text) => {
         }
     ]
 
+    // DO NOT CHANGE THIS FUNCTION!
     const defaultActions = () => {
         return [
             defaultAction,
@@ -202,6 +205,7 @@ const modifier = (text) => {
         ];
     }
 
+    // DO NOT CHANGE THIS FUNCTION!
     const defaultPlayer = (name = "You") => {
         return {
             name: name,
