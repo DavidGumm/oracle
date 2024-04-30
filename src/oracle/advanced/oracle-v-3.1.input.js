@@ -322,6 +322,7 @@ const tester = (state, text, history, storyCards, info) => {
         return defaultActionRate.starting + (Math.random() * (defaultActionRate.MinBonusRate - defaultActionRate.MaxBonusRate) + defaultActionRate.MaxBonusRate)
     }
 
+    // Feel free to change the values below to customize the default action but only the text values except for the name default.
     const defaultAction = {
         name: ["default"],
         successEndings: ["masterful", "remarkable", "flawless"],
@@ -356,8 +357,8 @@ const tester = (state, text, history, storyCards, info) => {
         successEndings: ["persuasive", "charm", "conviction"],
         failureEndings: ["awkward", "unconvincing", "ineffectual"],
         successStart: "You speak with",
-        failureStart: "You try to be persuasive, but your words are",
-        coolDownPhrase: "You're too flustered to speak clearly!",
+        failureStart: "the words are",
+        coolDownPhrase: "the words are garbled!",
         note: "",
         rate: .5,
         leveling: {
@@ -607,7 +608,7 @@ const tester = (state, text, history, storyCards, info) => {
      * @property {boolean} dynamicActions - Indicates whether dynamic actions are enabled.
      * @property {boolean} enableReputationSystem - Indicates whether the reputation system is enabled.
      * @property {boolean} enableSayCharismaCheck - Indicates whether the charisma check is enabled.
-     * @property {Object[]} eventSystem - An array of event systems.
+     * @property {EventSystem[]} eventSystem - An array of event systems.
      * @property {string} eventSystem.name - The name of the event system.
      * @property {Object[]} eventSystem.events - An array of events within the event system.
      * @property {number} eventSystem.events.chance - The chance of the event occurring.
@@ -986,7 +987,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         // Notify the player of the status.
         if (game.enablePlayerMessage) {
-            state.message = [game.messages, ...getPlayerStatusMessage()].filter(m => m !== "").join("\n").trim();
+            state.message = "This is not enabled yet as the message system is not fully implemented on AI Dungeon.";
             game.messages = [];
         }
         state.game = game;
