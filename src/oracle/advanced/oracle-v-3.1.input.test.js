@@ -26,7 +26,7 @@ const authorsNoteRegEx = /(|\[Your status: (|You're too flustered to speak clear
 
 const frontMemoryFightMatch = /The attack (made with deadly precision|is brutal efficiency|has unyielding resolve).|Your attack proves (misjudged|ineffective|reckless)!/;
 const frontMemoryMoveMatch = /Your movement is successfully and (graceful|fluid|agile).|Your attempt to move was (awkward|unprepared|reckless)!/;
-const frontMemorySpeechMatch = /You speak with (persuasive|charm|conviction).|You try to be persuasive, but your words are (awkward|unconvincing|ineffectual)!/;
+const frontMemorySpeechMatch = / speak with (persuasive|charm|conviction).|The words are (awkward|unconvincing|ineffectual)!/;
 const frontMemoryDefaultMatch = /Successfully, you manage to be (masterful|remarkable|flawless).|Despite your efforts, you end up being (clumsy|inept|futile)!/;
 
 for (let index = 0; index < 100; index++) {

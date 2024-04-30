@@ -357,8 +357,8 @@ const tester = (state, text, history, storyCards, info) => {
         successEndings: ["persuasive", "charm", "conviction"],
         failureEndings: ["awkward", "unconvincing", "ineffectual"],
         successStart: "You speak with",
-        failureStart: "the words are",
-        coolDownPhrase: "the words are garbled!",
+        failureStart: "The words are",
+        coolDownPhrase: "The words are garbled!",
         note: "",
         rate: .5,
         leveling: {
