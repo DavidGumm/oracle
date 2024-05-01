@@ -267,9 +267,8 @@ const tester = (state, text, history, storyCards, info) => {
         getResourceThresholds() {
             return this.resources.filter(r => r.value < r.thresholds[0].threshold).map(r => r.thresholds[0].message);
         }
-        setResources(isSuccess, actionName) {
-            const action = this.actions.find(a=> a.name.includes(actionName) && a.isResource);
-            if (action) {
+        setResources(isActiveTurn, action, isSuccess) {
+            if (action.isResource) {
                 const resource = this.resources.find(r => r.type === action.resource.type);
                 if (isSuccess) {
                     if (action.resource.isIncreasing) {
@@ -745,7 +744,7 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         // Adjust a action's success rate dynamically based on outcome
-        const setActionState = (action, isSuccess) => {
+        const setActionState = (isActiveTurn, action, isSuccess) => {
             // Increase the action rate more significantly the lower the current action level is.
             const calculateNewRate = isSuccess => {
                 return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
@@ -772,30 +771,26 @@ const tester = (state, text, history, storyCards, info) => {
                 return false;
             }
             const success = Math.random() < action.rate;
-            if (success) {
-                processReputation(action);
-            }
-            setActionState(action, success);
             const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
             game.messages = [message];
             return success;
         }
 
         /**
-         * Process all the actions providing an update to each non active action.
+         * Process all the actions providing an update to each non active action. Should be called before determining fate.
          * @param {string} name The Name of the action being used actively and action being ignored for updates.
          */
-        const processActionsCoolDown = (name) => {
+        const processActionsCoolDown = (isActiveTurn, action) => {
             game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
             activePlayer.actions.forEach(a => {
-                if (a.name !== name && a.coolDown > 0) {
-                    a.coolDown += -a.coolDown.decreaseRatePerAction;
+                if (currentAction.name[0] !== action.name[0] && a.coolDown > 0) {
+                    currentAction.coolDown += -a.coolDown.decreaseRatePerAction;
                 }
             });
         }
 
-        const processActionResource = (action) => {
-            if (action.isResource && action.resource.type !== "") {
+        const processActionResource = (isActiveTurn, action) => {
+            if (isActiveTurn && action.isResource && action.resource.type !== "") {
                 const resource = activePlayer.resources.find(r => r.type === action.resource.type);
                 if (resource) {
                     if (action.resource.isIncreasing) {
@@ -817,9 +812,9 @@ const tester = (state, text, history, storyCards, info) => {
          * Logic for handling the player exhaustion.
          * @param {boolean} active If the player turn is an active one.
          */
-        const processPlayerActivity = (active) => {
+        const processPlayerActivity = (isActiveTurn) => {
             if (!activePlayer.exhaustion.enabled) return;
-            if (active) {
+            if (isActiveTurn) {
                 activePlayer.exhaustion.inactive = 0;
                 activePlayer.exhaustion.active = checkWithinBounds(activePlayer.exhaustion.active + 1, 0, Number.MAX_SAFE_INTEGER);
                 activePlayer.threat.active = checkWithinBounds(activePlayer.threat.active + 1, 0, Number.MAX_SAFE_INTEGER);
@@ -839,38 +834,71 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
+        const processReputation = (isActiveTurn, action, isSuccess) => {
+            if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
+                activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
+            }
+        }
+
+//////// Module processing swap ///////////////////////////////////////////////////////////////////
+
+        //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored once the function is called.
+        //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+
+        const moduleProcessing = (isActiveTurn, action, isSuccess) => {
+
+            processActionResource(isActiveTurn, action);
+
+            processPlayerActivity(isActiveTurn);
+
+            processActionsCoolDown(isActiveTurn, action);
+
+            setActionState(isActiveTurn, action, isSuccess);
+
+            processReputation(isActiveTurn, action, isSuccess);
+
+            activePlayer.setResources(isActiveTurn, action, isSuccess);
+
+            
+        }
+        
+
         /**
          * The action command parse for use as command parse and entry point.
          * @param {string} text The user imputed text.
          */
         const actionParse = () => {
+            let isActiveTurn;
             if (isDoAction && !isSpeechAction) {
                 const action = getActionByName((actionMatch[3] || "default"));
+                isActiveTurn = true;
                 processActionResource(action);
                 processActionsCoolDown(action.name[0]);
                 const isSuccess = determineFate(action);
+                setActionState(action, isSuccess);
+                processReputation(action, isSuccess);
                 activePlayer.setResources(isSuccess, action.name[0]);
                 return action.getPhrase(isSuccess);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
                 // If speech is captured
                 const action = getActionByName("charisma");
-                processPlayerActivity(false);
+                isActiveTurn = false;
+                processPlayerActivity(isActiveTurn);
                 processActionsCoolDown(action.name[0]);
                 const isSuccess = determineFate(action);
+                setActionState(action, isSuccess);
+                processReputation(action, isSuccess);
                 activePlayer.setResources(isSuccess, action.name[0]);
                 return action.getPhrase(isSuccess);
             } else {
-                processPlayerActivity(false);
+                isActiveTurn = false;
+                processPlayerActivity(isActiveTurn);
                 return "";  // No relevant action found
             }
         }
 
-        const processReputation = (action) => {
-            if (game.enableReputationSystem && (Math.random() < action.memorable)) {
-                activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
-                activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
-            }
-        }
+        
 
         /**
          * Accounts for both an upper and lower bound
