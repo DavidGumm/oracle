@@ -1069,11 +1069,9 @@ const tester = (state, text, history, storyCards, info) => {
 
         //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
         //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
-        // Arguments go as: (isActiveTurn, action, isSuccess)
-
-        /*
-        All processing functions must account for a case where (action === undefined), make sure the logic doesn't fail.
-         */
+        //Arguments go as: (isActiveTurn, action, isSuccess)
+        //All processing functions must account for a case where (action === undefined)
+        
 
         const setCurrentPlayerResources = (isActiveTurn, action, isSuccess) => {
             activePlayer.setResources(isActiveTurn, action, isSuccess);
