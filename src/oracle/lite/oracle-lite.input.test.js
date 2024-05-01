@@ -44,7 +44,7 @@ for (let index = 0; index < 10; index++) {
         const results = tester(stateInitial(), text, historyInitial(), storyCardsInitial(), infoInitial());
         expect(results.state).toMatchObject(stateInitial());
         expect(results.state.memory.frontMemory).toMatch(regExFrontMemory);
-        expect(results.state.message).toMatch(regExMessage);
+        expect(results.state.message).toBe(undefined);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(historyInitial());
         expect(results.storyCards).toMatchObject(storyCardsInitial());
@@ -56,7 +56,7 @@ for (let index = 0; index < 10; index++) {
         const results = tester(stateInitial(), text, historyInitial(), storyCardsInitial(), infoInitial());
         expect(results.state).toMatchObject(stateInitial());
         expect(results.state.memory.frontMemory).toMatch(regExFrontMemory);
-        expect(results.state.message).toMatch(regExMessage);
+        expect(results.state.message).toBe(undefined);
         expect(results.text).toBe("> You try to throw a rock.");
         expect(results.history).toMatchObject(historyInitial());
         expect(results.storyCards).toMatchObject(storyCardsInitial());
@@ -68,7 +68,7 @@ for (let index = 0; index < 10; index++) {
         const results = tester(stateInitial(), text, historyInitial(), storyCardsInitial(), infoInitial());
         expect(results.state).toMatchObject(stateInitial());
         expect(results.state.memory.frontMemory).toMatch(regExFrontMemory);
-        expect(results.state.message).toMatch(regExMessage);
+        expect(results.state.message).toBe(undefined);
         expect(results.text).toBe("> Magnus tries to throw a rock.");
         expect(results.history).toMatchObject(historyInitial());
         expect(results.storyCards).toMatchObject(storyCardsInitial());
@@ -80,7 +80,7 @@ for (let index = 0; index < 10; index++) {
         const results = tester(stateInitial(), text, historyInitial(), storyCardsInitial(), infoInitial());
         expect(results.state).toMatchObject(stateInitial());
         expect(results.state.memory.frontMemory).toMatch(regExFrontMemory);
-        expect(results.state.message).toMatch(regExMessage);
+        expect(results.state.message).toBe(undefined);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(historyInitial());
         expect(results.storyCards).toMatchObject(storyCardsInitial());

@@ -1,9 +1,8 @@
-const tester = require("./oracle-v-3.1.input");
-
+const { tester, getRandomItem, getNextItem, getIsOrAre, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultGame, defaultPlayer, defaultResource, defaultAction, defaultActionHistory, defaultEventSystem, defaultExhaustion, defaultThreat, defaultActionRate, customActions } = require("./oracle-v-3.1.input");
+const loops = 100;
 const state = {
-    key: "value",
     memory: { context: "This is the memory", authorsNote: "This is the authors note" },
-    message: "Hello Player"
+    game: new Game(defaultGame),
 };
 const history = [
     {
@@ -22,14 +21,71 @@ const info = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-const authorsNoteRegEx = /(|\[Your status: (|You're too flustered to speak clearly!)] )(There are clouds outside. |It is thundering outside. |It is clear outside. |There is a thick fog outside. |There are clouds and precipitation outside. )(|Suddenly a zombie appears! )(|You feel upset. |You feel betrayed. |You feel emotional hurt. |You are sad. |You are depressed. |You feel happy. |You feel evil. |You feel generous. |You feel selfish. |You need attention from another person. |You need the comfort of home. )(|Your known to be bland, boring and run of the mill. )(|You are known to all around you. )(|The room seems to light up when you enter. )(|People fear you and your aura of violence. )(|You move with grace and style. )Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Bad things are allowed to happen to the protagonist and other important characters. The protagonist is allowed to struggle or even fail. It is forbidden to directly state character emotions; instead, convey them via behavior and body language. Characters are allowed to disagree with the protagonist and follow their own goals. Villains should not capitulate as soon as the protagonist uses logic.Villains have reasons for what they do, and will generally continue opposing the protagonist regardless./
+const authorsNoteRegEx = /(|\[You are, unable to make sense, a skilled fighter.\] \[Bob is, unable to make sense, a skilled fighter.\] )It is thundering outside. Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining./
 
-const frontMemoryFightMatch = /The attack (made with deadly precision|is brutal efficiency|has unyielding resolve).|Your attack proves (misjudged|ineffective|reckless)!/;
+const frontMemoryFightMatch = /The attack (made with deadly precision|is brutal efficiency|has unyielding resolve).| But the attack proves (misjudged|ineffective|reckless)!/;
 const frontMemoryMoveMatch = /Your movement is successfully and (graceful|fluid|agile).|Your attempt to move was (awkward|unprepared|reckless)!/;
-const frontMemorySpeechMatch = /You speak with (persuasive|charm|conviction).|You try to be persuasive, but your words are (awkward|unconvincing|ineffectual)!/;
-const frontMemoryDefaultMatch = /Successfully, you manage to be (masterful|remarkable|flawless).|Despite your efforts, you end up being (clumsy|inept|futile)!/;
+const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction).| But the words are (awkward|unconvincing|ineffectual)!/;
+const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless).| But fail, managing to be (clumsy|inept|futile)!/;
 
-for (let index = 0; index < 60; index++) {
+test("Test Player Class", () => {
+    expect(state.game.players[0].name).toBe("You");
+
+    state.game.players[0].setResources(false, "fighting");
+    expect(state.game.players[0].resources[0].value).toBe(7);
+    expect(state.game.players[0].getResourceThresholds()).toStrictEqual(["slightly injured"]);
+
+    state.game.players[0].setResources(true, "first-aid");
+    expect(state.game.players[0].resources[0].value).toBe(10);
+    expect(state.game.players[0].getResourceThresholds()).toStrictEqual(["in good health"]);
+    expect(state.game.players[0].getStatus()).toBe("[You are, unable to make sense, a skilled fighter, in good health.]");
+
+    state.game.players[0].updateActions(true, "charisma");
+    expect(state.game.players[0].actions[1].rate).toBeGreaterThan(0.5);
+});
+
+test("Test getRandomItem", () => {
+    const arr = [1, 2, 3, 4, 5];
+    const item = getRandomItem(arr);
+    expect(arr.includes(item)).toBe(true);
+});
+
+test("Test getNextItem", () => {
+    const arr = [1, 2, 3, 4, 5];
+    const currentIndex = 2;
+    const nextItem = getNextItem(arr, currentIndex);
+    expect(nextItem).toBe(arr[currentIndex + 1]);
+});
+
+test("Test checkWithinBounds", () => {
+    const number = 10;
+    const lowerBound = 5;
+    const upperBound = 15;
+    const adjustedNumber = checkWithinBounds(number, lowerBound, upperBound);
+    expect(adjustedNumber).toBe(number);
+
+    const number2 = 20;
+    const adjustedNumber2 = checkWithinBounds(number2, lowerBound, upperBound);
+    expect(adjustedNumber2).toBe(upperBound);
+});
+
+test("Test startingActionRate", () => {
+    const starting = 0.4;
+    const min = 0.01;
+    const max = 0.2;
+    const actionRate = startingActionRate(starting, min, max);
+    expect(actionRate).toBeLessThan(max+starting+0.01);
+    expect(actionRate).toBeGreaterThan(starting);
+});
+
+test("Test getIsOrAre", () => {
+    expect(getIsOrAre("You")).toBe("are");
+    expect(getIsOrAre("Bob")).toBe("is");
+    expect(getIsOrAre("I")).toBe("am");
+});
+
+for (let index = 0; index < loops; index++) {
+
     test("Test Fighting action", () => {
         const text = "> You try to use fighting to defend yourself.";
         const results = tester(state, text, history, storyCards, info);
@@ -79,7 +135,7 @@ for (let index = 0; index < 60; index++) {
     });
 
     test("Test speech action with new player", () => {
-        const text = "> Magnus says \"Some words you say.\"";
+        const text = "> Bob says \"Some words you say.\"";
         const results = tester(state, text, history, storyCards, info);
         //expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch(frontMemorySpeechMatch);
