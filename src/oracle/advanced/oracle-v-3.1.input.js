@@ -745,18 +745,20 @@ const tester = (state, text, history, storyCards, info) => {
 
         // Adjust a action's success rate dynamically based on outcome
         const setActionState = (isActiveTurn, action, isSuccess) => {
-            // Increase the action rate more significantly the lower the current action level is.
-            const calculateNewRate = isSuccess => {
-                return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
-            }
-            adjustActionLevel(action, calculateNewRate(isSuccess), isSuccess);
+            if (action) {
+                // Increase the action rate more significantly the lower the current action level is.
+                const calculateNewRate = isSuccess => {
+                    return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
+                }
+                adjustActionLevel(action, calculateNewRate(isSuccess), isSuccess);
+            } 
         }
 
         const adjustActionLevel = (action, newRate, isSuccess) => {
-            if (isSuccess && action.leveling.increaseEnabled) {
+            if (newRate >= action.rate && action.leveling.increaseEnabled) {
                 checkWithinBounds(newRate, action.leveling.maxRate);
             }
-            if (!isSuccess && action.leveling.decreaseEnabled) {
+            else if (action.leveling.decreaseEnabled) {
                 checkWithinBounds(newRate, action.leveling.minRate);
             }
         }
@@ -782,11 +784,22 @@ const tester = (state, text, history, storyCards, info) => {
          */
         const processActionsCoolDown = (isActiveTurn, action) => {
             game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
-            activePlayer.actions.forEach(a => {
-                if (currentAction.name[0] !== action.name[0] && a.coolDown > 0) {
-                    currentAction.coolDown += -a.coolDown.decreaseRatePerAction;
-                }
-            });
+            //If an action was supplied
+            if (action) {
+                activePlayer.actions.forEach(currentAction => {
+                    if (currentAction.name[0] !== action.name[0] && currentAction.coolDown > 0) {
+                        currentAction.coolDown += -a.coolDown.decreaseRatePerAction;
+                    }
+                });
+            }
+            //If an action was not supplied
+            else {
+                activePlayer.actions.forEach(currentAction => {
+                    if (currentAction.coolDown > 0) {
+                        currentAction.coolDown += -a.coolDown.decreaseRatePerAction;
+                    }
+                });
+            }
         }
 
         const processActionResource = (isActiveTurn, action) => {
@@ -835,16 +848,22 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         const processReputation = (isActiveTurn, action, isSuccess) => {
-            if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
-                activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
-                activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
+            if (action) {
+                if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
+                    activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                    activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
+                }
             }
         }
 
 //////// Module processing swap ///////////////////////////////////////////////////////////////////
 
-        //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored once the function is called.
+        //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
         //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+
+        /*
+        All processing functions must account for a case where (action === undefined), make sure the logic doesn't fail.
+         */
 
         const moduleProcessing = (isActiveTurn, action, isSuccess) => {
 
