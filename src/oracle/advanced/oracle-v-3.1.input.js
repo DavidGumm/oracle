@@ -330,9 +330,11 @@ class Player {
     }
 
     updateActions(isActiveTurn, action, isSuccess) {
-        this.actions.forEach(currentAction => {
-            currentAction.updateRate(isSuccess, currentAction.name.includes(action.name[0]));
-        });
+        if (action) {
+            this.actions.forEach(currentAction => {
+                currentAction.updateRate(isSuccess, currentAction.name.includes(action.name[0]));
+            });
+        }
     }
 
     getCoolDownPhrase() {
@@ -368,7 +370,7 @@ class Player {
     }
 
     setResources(isActiveTurn, action, isSuccess) {
-        if (action.isResource) {
+        if (action && action.isResource) {
             const resource = this.resources.find(r => r.type === action.resource.type);
             if (action.resource.isIncreasing && action.resource.onSuccess && isSuccess) {
                 resource.value = Math.min(resource.max, resource.value + action.resource.modify);
@@ -1073,23 +1075,34 @@ const tester = (state, text, history, storyCards, info) => {
         All processing functions must account for a case where (action === undefined), make sure the logic doesn't fail.
          */
 
-        const moduleProcessing = (isActiveTurn, action, isSuccess) => {
-
-            processActionResource(isActiveTurn, action);
-
-            processPlayerActivity(isActiveTurn);
-
-            processActionsCoolDown(isActiveTurn, action);
-
-            setActionState(isActiveTurn, action, isSuccess);
-
-            processReputation(isActiveTurn, action, isSuccess);
-
+        const setCurrentPlayerResources = (isActiveTurn, action, isSuccess) => {
             activePlayer.setResources(isActiveTurn, action, isSuccess);
-
+        }
+        const updateCurrentPlayerActions = (isActiveTurn, action, isSuccess) => {
             activePlayer.updateActions(isActiveTurn, action, isSuccess);
+        } 
+        
+        /**
+         * list of functions to call for processing
+         */
+        let moduleProcessingArray = [
 
-            
+            processActionResource,
+            processPlayerActivity,
+            processActionsCoolDown,
+            processReputation,
+            setCurrentPlayerResources,
+            updateCurrentPlayerActions,
+        ];
+
+        /**
+         * Handles the processing for game subsystems.
+         * @param {*} isActiveTurn 
+         * @param {*} action 
+         * @param {*} isSuccess 
+         */
+        const callModuleProcessing = (isActiveTurn, action, isSuccess) => {
+            moduleProcessingArray.forEach(currentFunction => {currentFunction.apply(null, [isActiveTurn, action, isSuccess])});
         }
         
 
@@ -1103,12 +1116,15 @@ const tester = (state, text, history, storyCards, info) => {
                 const action = getActionByName((actionMatch[3] || "default"));
                 isActiveTurn = true;
                 const isSuccess = determineFate(action);
-                processActionResource(isActiveTurn, action);
-                processPlayerActivity(isActiveTurn);
-                processActionsCoolDown(isActiveTurn, action);
-                setActionState(isSuccess, action, isSuccess);
-                processReputation(isActiveTurn, action, isSuccess);
-                activePlayer.setResources(isActiveTurn, action, isSuccess);
+                callModuleProcessing(isActiveTurn, action, isSuccess);
+                //moduleProcessing[0](isActiveTurn, action, isSuccess);
+                //processActionResource(isActiveTurn, action);
+                //processPlayerActivity(isActiveTurn);
+                //processActionsCoolDown(isActiveTurn, action);
+                //setActionState(isSuccess, action, isSuccess);
+                //processReputation(isActiveTurn, action, isSuccess);
+                //activePlayer.setResources(isActiveTurn, action, isSuccess);
+                //moduleProcessingArray[5](isActiveTurn, action, isSuccess);
                 activePlayer.updateActions(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
@@ -1116,17 +1132,18 @@ const tester = (state, text, history, storyCards, info) => {
                 const action = getActionByName("charisma");
                 isActiveTurn = false;
                 const isSuccess = determineFate(action);
-                processActionResource(isActiveTurn, action);
-                processPlayerActivity(isActiveTurn);
-                processActionsCoolDown(isActiveTurn, action);
-                setActionState(isActiveTurn, action, isSuccess);
-                processReputation(isActiveTurn, action, isSuccess);
-                activePlayer.setResources(isActiveTurn, action, isSuccess);
-                activePlayer.updateActions(isActiveTurn, action, isSuccess);
+                callModuleProcessing(isActiveTurn, action, isSuccess);
+                //processActionResource(isActiveTurn, action);
+                //processPlayerActivity(isActiveTurn);
+                //processActionsCoolDown(isActiveTurn, action);
+                //setActionState(isActiveTurn, action, isSuccess);
+                //processReputation(isActiveTurn, action, isSuccess);
+                //activePlayer.setResources(isActiveTurn, action, isSuccess);
+                //activePlayer.updateActions(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else {
                 isActiveTurn = false;
-                processPlayerActivity(isActiveTurn);
+                callModuleProcessing(isActiveTurn);
                 return "";  // No relevant action found
             }
         }
