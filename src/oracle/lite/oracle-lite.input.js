@@ -8,7 +8,7 @@ const tester = (state, text, history, storyCards, info) => {
     // Chance of critical success, .95 is like rolling a 20 on a 20 sided dice.
     const DEFAULT_CRITICAL_SUCCESS = .95;
     // Enabled user messages. If you find this feature annoying disable it here.
-    const ENABLED_USER_MESSAGES = true;
+    const ENABLED_USER_MESSAGES = false;
 
     // The following are the messages you receive and are send to the AI to signify success or failure.
     // The critical success message
