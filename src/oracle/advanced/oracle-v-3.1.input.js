@@ -217,6 +217,7 @@ const tester = (state, text, history, storyCards, info) => {
             this.memorableThreshold = action.memorableThreshold;
             this.isResource = action.isResource;
             this.resource = new ActionResource(action.resource);
+            this.preventAction = [];
         }
         getPhrase(isSuccess) {
             const note = this.note !== "" ? ` [${this.name[0]} Action Note: ${this.note}]` : "";
@@ -350,6 +351,7 @@ const tester = (state, text, history, storyCards, info) => {
         },
         isResource: false,
         resource: [],
+        preventAction: [],
     };
 
     const defaultCharismaAction = {
@@ -379,6 +381,7 @@ const tester = (state, text, history, storyCards, info) => {
         },
         isResource: false,
         resource: [],
+        preventAction: [],
     };
 
     // Custom actions is an array of actions that can be added to the game. Define as many as you like, but make sure to lower the decreaseRate in the leveling object to match the number of actions including the charisma action but not the default action.
@@ -416,7 +419,8 @@ const tester = (state, text, history, storyCards, info) => {
                 type: "health",
                 isIncreasing: true,
                 modify: 3
-            }
+            },
+            preventAction: [],
         },
         {
             name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
@@ -448,6 +452,7 @@ const tester = (state, text, history, storyCards, info) => {
             memorableThreshold: 3,
             isResource: false,
             resource: [],
+            preventAction: [],
         },
         {
             name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
@@ -479,6 +484,7 @@ const tester = (state, text, history, storyCards, info) => {
             memorableThreshold: 3,
             isResource: false,
             resource: [],
+            preventAction: [],
         },
         {
             name: ["performance", "dancing", "singing", "jokes"],
@@ -510,6 +516,7 @@ const tester = (state, text, history, storyCards, info) => {
             memorableThreshold: 3,
             isResource: false,
             resource: [],
+            preventAction: [],
         },
         {
             name: ["first-aid", "medicine", "medical"],
@@ -544,7 +551,8 @@ const tester = (state, text, history, storyCards, info) => {
                 type: "health",
                 isIncreasing: true,
                 modify: 3
-            }
+            },
+            preventAction: [],
         }
     ]
 
@@ -553,7 +561,7 @@ const tester = (state, text, history, storyCards, info) => {
         return [
             defaultAction,
             defaultCharismaAction,
-            ...customActions
+            customActions
         ];
     }
 
