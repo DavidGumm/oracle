@@ -286,7 +286,7 @@ class Action {
         this.memorableThreshold = action.memorableThreshold;
         this.isResource = action.isResource;
         this.resource = new ActionResource(action.resource);
-            this.preventAction = [];
+        this.preventAction = [];
     }
 
     /**
@@ -329,9 +329,9 @@ class Player {
         this.threat = new Threat(player.threat);
     }
 
-    updateActions(isSuccess, actionName) {
-        this.actions.forEach(a => {
-            a.updateRate(isSuccess, a.name.includes(actionName));
+    updateActions(isActiveTurn, action, isSuccess) {
+        this.actions.forEach(currentAction => {
+            currentAction.updateRate(isSuccess, currentAction.name.includes(action.name[0]));
         });
     }
 
@@ -367,9 +367,8 @@ class Player {
         return this.resources.map(r => r.thresholds.find(t => r.value <= t.threshold)).filter(e => e).map(e => e.message);
     }
 
-    setResources(isSuccess, actionName) {
-        const action = this.actions.find(a => a.name.includes(actionName) && a.isResource);
-        if (action) {
+    setResources(isActiveTurn, action, isSuccess) {
+        if (action.isResource) {
             const resource = this.resources.find(r => r.type === action.resource.type);
             if (action.resource.isIncreasing && action.resource.onSuccess && isSuccess) {
                 resource.value = Math.min(resource.max, resource.value + action.resource.modify);
@@ -1017,20 +1016,22 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         const processActionResource = (isActiveTurn, action) => {
-            if (isActiveTurn && action.isResource && action.resource.type !== "") {
-                const resource = activePlayer.resources.find(r => r.type === action.resource.type);
-                if (resource) {
-                    if (action.resource.isIncreasing) {
-                        resource.value += action.resource.modify;
-                    } else {
-                        resource.value -= action.resource.modify;
-                    }
-                    resource.value = Math.min(resource.max, Math.max(resource.min, resource.value));
-                    resource.thresholds.forEach(t => {
-                        if (resource.value >= t.threshold) {
-                            game.messages.push(t.message);
+            if (action) {
+                if (isActiveTurn && action.isResource && action.resource.type !== "") {
+                    const resource = activePlayer.resources.find(r => r.type === action.resource.type);
+                    if (resource) {
+                        if (action.resource.isIncreasing) {
+                            resource.value += action.resource.modify;
+                        } else {
+                            resource.value -= action.resource.modify;
                         }
-                    });
+                        resource.value = Math.min(resource.max, Math.max(resource.min, resource.value));
+                        resource.thresholds.forEach(t => {
+                            if (resource.value >= t.threshold) {
+                                game.messages.push(t.message);
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -1066,6 +1067,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
         //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+        // Arguments go as: (isActiveTurn, action, isSuccess)
 
         /*
         All processing functions must account for a case where (action === undefined), make sure the logic doesn't fail.
@@ -1085,6 +1087,8 @@ const tester = (state, text, history, storyCards, info) => {
 
             activePlayer.setResources(isActiveTurn, action, isSuccess);
 
+            activePlayer.updateActions(isActiveTurn, action, isSuccess);
+
             
         }
         
@@ -1098,25 +1102,27 @@ const tester = (state, text, history, storyCards, info) => {
             if (isDoAction && !isSpeechAction) {
                 const action = getActionByName((actionMatch[3] || "default"));
                 isActiveTurn = true;
-                processActionResource(action);
-                processActionsCoolDown(action.name[0]);
                 const isSuccess = determineFate(action);
-                setActionState(action, isSuccess);
-                processReputation(action, isSuccess);
-                activePlayer.setResources(isSuccess, action.name[0]);
-                activePlayer.updateActions(isSuccess, action.name[0]);
+                processActionResource(isActiveTurn, action);
+                processPlayerActivity(isActiveTurn);
+                processActionsCoolDown(isActiveTurn, action);
+                setActionState(isSuccess, action, isSuccess);
+                processReputation(isActiveTurn, action, isSuccess);
+                activePlayer.setResources(isActiveTurn, action, isSuccess);
+                activePlayer.updateActions(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
                 // If speech is captured
                 const action = getActionByName("charisma");
                 isActiveTurn = false;
-                processPlayerActivity(isActiveTurn);
-                processActionsCoolDown(action.name[0]);
                 const isSuccess = determineFate(action);
-                setActionState(action, isSuccess);
-                processReputation(action, isSuccess);
-                activePlayer.setResources(isSuccess, action.name[0]);
-                activePlayer.updateActions(isSuccess, action.name[0]);
+                processActionResource(isActiveTurn, action);
+                processPlayerActivity(isActiveTurn);
+                processActionsCoolDown(isActiveTurn, action);
+                setActionState(isActiveTurn, action, isSuccess);
+                processReputation(isActiveTurn, action, isSuccess);
+                activePlayer.setResources(isActiveTurn, action, isSuccess);
+                activePlayer.updateActions(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else {
                 isActiveTurn = false;
