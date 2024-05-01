@@ -1,4 +1,4 @@
-const { tester, getRandomItem, setActionState, getNextItem, getIsOrAre, checkWithinBounds, startingActionRate, adjustActionLevel, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultGame, defaultPlayer, defaultResource, defaultAction, defaultActionHistory, defaultEventSystem, defaultExhaustion, defaultThreat, defaultActionRate, customActions } = require("./oracle-v-3.1.input");
+const { tester, getRandomItem, getNextItem, getIsOrAre, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultGame, defaultPlayer, defaultResource, defaultAction, defaultActionHistory, defaultEventSystem, defaultExhaustion, defaultThreat, defaultActionRate, customActions } = require("./oracle-v-3.1.input");
 const loops = 100;
 const state = {
     memory: { context: "This is the memory", authorsNote: "This is the authors note" },
@@ -28,11 +28,13 @@ const frontMemoryMoveMatch = /Your movement is successfully and (graceful|fluid|
 const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction).| But the words are (awkward|unconvincing|ineffectual)!/;
 const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless).| But fail, managing to be (clumsy|inept|futile)!/;
 
-test("Test Player", () => {
+test("Test Player Class", () => {
     expect(state.game.players[0].name).toBe("You");
+
     state.game.players[0].setResources(false, "fighting");
     expect(state.game.players[0].resources[0].value).toBe(7);
     expect(state.game.players[0].getResourceThresholds()).toStrictEqual(["slightly injured"]);
+
     state.game.players[0].setResources(true, "first-aid");
     expect(state.game.players[0].resources[0].value).toBe(10);
     expect(state.game.players[0].getResourceThresholds()).toStrictEqual(["in good health"]);

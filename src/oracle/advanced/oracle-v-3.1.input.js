@@ -1,4 +1,3 @@
-
 // ++++++++++++++++++++++++
 // ++++++++++++++++++++++++
 // DO NOT EDIT THIS SECTION
@@ -21,15 +20,6 @@ const getNextItem = (arr, currentIndex) => {
     return arr[(currentIndex + 1) % arr.length];
 }
 
-// Adjust a action's success rate dynamically based on outcome
-const setActionState = (action, isSuccess) => {
-    // Increase the action rate more significantly the lower the current action level is.
-    const calculateNewRate = isSuccess => {
-        return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
-    }
-    adjustActionLevel(action, calculateNewRate(isSuccess), isSuccess);
-}
-
 /**
  * Accounts for both an upper and lower bound
  *
@@ -48,15 +38,6 @@ const checkWithinBounds = (number, lowerBound, upperBound) => {
         return Math.max(number, lowerBound);
     } else {
         return Math.min(Math.max(number, lowerBound), upperBound);
-    }
-}
-
-const adjustActionLevel = (action, newRate, isSuccess) => {
-    if (isSuccess && action.leveling.increaseEnabled) {
-        return checkWithinBounds(newRate, action.leveling.maxRate);
-    }
-    if (!isSuccess && action.leveling.decreaseEnabled) {
-        return checkWithinBounds(newRate, action.leveling.minRate);
     }
 }
 
@@ -910,7 +891,7 @@ const tester = (state, text, history, storyCards, info) => {
             return game.players.find(p => p.name === name) || game.players[0];
         }
 
-        const delphicBase = (upgrade) => {
+        const delphicBase = () => {
             // Set the default game state
             if (!state.game) {
                 state.game = new Game(defaultGame);
@@ -1083,18 +1064,18 @@ const tester = (state, text, history, storyCards, info) => {
             return status.length > 0 ? status : "";
         }
 
-        /**
-         * Gets the players status for the message.
-         * @returns The status.
-         */
-        const getPlayerStatusMessage = (who) => {
-            const status = game.players.map(p => p.actions).filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0)
-                .map(a => `${a.name[0]} is cooling down for ${a.coolDown.remainingTurns} turns. Causing: "${a.coolDownPhrase}"`);
-            if (status.length > 0) {
-                return status;
-            }
-            return "";
-        }
+        // /**
+        //  * Gets the players status for the message.
+        //  * @returns The status.
+        //  */
+        // const getPlayerStatusMessage = (who) => {
+        //     const status = game.players.map(p => p.actions).filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0)
+        //         .map(a => `${a.name[0]} is cooling down for ${a.coolDown.remainingTurns} turns. Causing: "${a.coolDownPhrase}"`);
+        //     if (status.length > 0) {
+        //         return status;
+        //     }
+        //     return "";
+        // }
 
         const getResourceThresholds = () => {
             let thresholds = [];
@@ -1135,4 +1116,4 @@ const tester = (state, text, history, storyCards, info) => {
 
     return { state, text, history, storyCards, info }
 }
-module.exports = { tester, getRandomItem, getNextItem, setActionState, adjustActionLevel, getIsOrAre, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions};
+module.exports = { tester, getRandomItem, getNextItem, getIsOrAre, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions};
