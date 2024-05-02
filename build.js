@@ -3,7 +3,7 @@
 require("esbuild")
     .build({
         logLevel: "info",
-        entryPoints: ["src/input.*.ts"],
+        entryPoints: ["src/input.*.js"],
         bundle: true,
         outdir: "dist",
         platform: 'esm', // Specify target platform
