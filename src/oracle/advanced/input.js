@@ -1,5 +1,6 @@
 // Every script needs a modifier function
-const modifier = (text) => {// ++++++++++++++++++++++++
+const modifier = (text) => {
+    // ++++++++++++++++++++++++
     // ++++++++++++++++++++++++
     // DO NOT EDIT THIS SECTION
     // ++++++++++++++++++++++++
@@ -133,15 +134,14 @@ const modifier = (text) => {// ++++++++++++++++++++++++
         /**
          * Changes the event.
          */
-        changeEvent() {
-            if (Math.random() < this.chance) {
+        changeEvent(chance) {
+            if (chance < this.chance) {
                 if (this.isRandom) {
                     const random = Math.random();
-                    this.events.every(e => {
+                    this.events.forEach(e => {
                         if (random < e.chance) {
                             this.current = e;
                             this.description = e.description;
-                            return false;
                         }
                     });
                 } else {
@@ -468,10 +468,17 @@ const modifier = (text) => {// ++++++++++++++++++++++++
     // This section can be customized to fit the need of the game.
     // Change the values below to fractions of a whole number to affect the script.
     const defaultActionRate = {
-        starting: .3, // I recommend this be set to .5 for easy and .2 for hard.
+        // I recommend this be set to .5 for easy and .2 for hard.
+        starting: .3,
+        // The maximum starting bonus for an action.
         MaxBonusRate: .2,
+        // The minimum starting bonus for an action.
         MinBonusRate: .01,
+        // The max rate for an action.
+        // I do not recommend setting this to above .95.
         max: .95,
+        // The min rate for an action.
+        // I do not recommend setting this to below .05.
         min: .05
     }
 
@@ -632,8 +639,8 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
             successEndings: ["agile", "graceful", "fluid"],
             failureEndings: ["unprepared", "reckless", "awkward"],
-            successStart: "Your movement is successfully and",
-            failureStart: "Your attempt to move was",
+            successStart: "the movement is successfully and",
+            failureStart: "the attempt to move was",
             coolDownPhrase: "barely able to move",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -654,7 +661,7 @@ const modifier = (text) => {// ++++++++++++++++++++++++
                 remainingTurns: 0
             },
             memorable: true,
-            knownFor: "a skilled mover",
+            knownFor: "parkour master",
             memorableThreshold: 3,
             isResource: false,
             resources: [],
@@ -662,9 +669,9 @@ const modifier = (text) => {// ++++++++++++++++++++++++
         {
             name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
             successEndings: ["perceptive", "attentive", "detailed"],
-            failureEndings: ["overlooked", "distracted", "cursory"],
-            successStart: "You observe carefully and",
-            failureStart: "Despite your efforts to notice details, you are",
+            failureEndings: ["overlooking", "being distracted", "lack of depth"],
+            successStart: "the observation is successful and",
+            failureStart: "failing to notice the details you fail by",
             coolDownPhrase: "unable to focus",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -694,8 +701,8 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             name: ["performance", "dancing", "singing", "jokes"],
             successEndings: ["perceptive", "engaging", "lively"],
             failureEndings: ["overlooked", "distracted", "bland"],
-            successStart: "The preform performance is ",
-            failureStart: "Despite your efforts, you are",
+            successStart: "the preform performance is",
+            failureStart: "despite the efforts, the performance is",
             coolDownPhrase: "preforming poorly",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -725,8 +732,8 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             name: ["first-aid", "medicine", "medical"],
             successEndings: ["life saving", "skillful", "precise"],
             failureEndings: ["misjudged", "ineffective", "reckless"],
-            successStart: "The first-aid",
-            failureStart: "Your first-aid proves",
+            successStart: "the first-aid attempt succeeds and is",
+            failureStart: "the attempt at first-aid proves",
             coolDownPhrase: "are out of first-aid supplies",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -822,7 +829,7 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             // The outcomes for the threat system when the player is inactive.
             // Add as many as you like but keep one in the array.
             // The system randomly selects one of the outcomes for the player inaction.
-            array: ["A standee noise can he heard.", "There is a strange smell in the air.", "There is sudden silence."],
+            array: ["A strange noise can he heard.", "There is a strange smell in the air.", "There is sudden silence."],
         },
         // The event system for the player.
         // This is used to add random events to the player.
@@ -897,11 +904,11 @@ const modifier = (text) => {// ++++++++++++++++++++++++
                 // The chance is a fraction of a whole number.
                 // The description is the text that is displayed when the event occurs.
                 events: [
-                    { chance: .05, description: "It is thundering outside." },
-                    { chance: .1, description: "There are clouds and precipitation outside." },
-                    { chance: .15, description: "There are clouds outside." },
+                    { chance: 1, description: "It is clear outside." },
                     { chance: .25, description: "There is a thick fog outside." },
-                    { chance: 1, description: "It is clear outside." }
+                    { chance: .15, description: "There are clouds outside." },
+                    { chance: .1, description: "There are clouds and precipitation outside." },
+                    { chance: .05, description: "It is thundering outside." },
                 ],
                 // The chance of the event system changing events.
                 chance: 0.1,
@@ -1133,7 +1140,7 @@ const modifier = (text) => {// ++++++++++++++++++++++++
         }
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
-        game.eventSystem.forEach(e => e.changeEvent());
+        game.eventSystem.forEach(e => e.changeEvent(Math.random()));
         state.memory.frontMemory = actionParse();
 
         state.memory.authorsNote = [
