@@ -134,15 +134,14 @@ const modifier = (text) => {
         /**
          * Changes the event.
          */
-        changeEvent() {
-            if (Math.random() < this.chance) {
+        changeEvent(chance) {
+            if (chance < this.chance) {
                 if (this.isRandom) {
                     const random = Math.random();
-                    this.events.every(e => {
+                    this.events.forEach(e => {
                         if (random < e.chance) {
                             this.current = e;
                             this.description = e.description;
-                            return false;
                         }
                     });
                 } else {
@@ -469,10 +468,17 @@ const modifier = (text) => {
     // This section can be customized to fit the need of the game.
     // Change the values below to fractions of a whole number to affect the script.
     const defaultActionRate = {
-        starting: .3, // I recommend this be set to .5 for easy and .2 for hard.
+        // I recommend this be set to .5 for easy and .2 for hard.
+        starting: .3,
+        // The maximum starting bonus for an action.
         MaxBonusRate: .2,
+        // The minimum starting bonus for an action.
         MinBonusRate: .01,
+        // The max rate for an action.
+        // I do not recommend setting this to above .95.
         max: .95,
+        // The min rate for an action.
+        // I do not recommend setting this to below .05.
         min: .05
     }
 
@@ -823,7 +829,7 @@ const modifier = (text) => {
             // The outcomes for the threat system when the player is inactive.
             // Add as many as you like but keep one in the array.
             // The system randomly selects one of the outcomes for the player inaction.
-            array: ["A standee noise can he heard.", "There is a strange smell in the air.", "There is sudden silence."],
+            array: ["A strange noise can he heard.", "There is a strange smell in the air.", "There is sudden silence."],
         },
         // The event system for the player.
         // This is used to add random events to the player.
@@ -898,11 +904,11 @@ const modifier = (text) => {
                 // The chance is a fraction of a whole number.
                 // The description is the text that is displayed when the event occurs.
                 events: [
-                    { chance: .05, description: "It is thundering outside." },
-                    { chance: .1, description: "There are clouds and precipitation outside." },
-                    { chance: .15, description: "There are clouds outside." },
+                    { chance: 1, description: "It is clear outside." },
                     { chance: .25, description: "There is a thick fog outside." },
-                    { chance: 1, description: "It is clear outside." }
+                    { chance: .15, description: "There are clouds outside." },
+                    { chance: .1, description: "There are clouds and precipitation outside." },
+                    { chance: .05, description: "It is thundering outside." },
                 ],
                 // The chance of the event system changing events.
                 chance: 0.1,
@@ -1134,7 +1140,7 @@ const modifier = (text) => {
         }
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
-        game.eventSystem.forEach(e => e.changeEvent());
+        game.eventSystem.forEach(e => e.changeEvent(Math.random()));
         state.memory.frontMemory = actionParse();
 
         state.memory.authorsNote = [
