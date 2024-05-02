@@ -24,7 +24,7 @@ const info = {
 const authorsNoteRegEx = /(|\[You are, unable to make sense, a skilled fighter.\] \[Bob is, unable to make sense, a skilled fighter.\] )It is thundering outside. Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining./
 
 const frontMemoryFightMatch = / And the attack is made with (deadly precision|brutal efficiency|unyielding determination).| But the attack proves (misjudged|ineffective|reckless)!/;
-const frontMemoryMoveMatch = /Your movement is successfully and (graceful|fluid|agile).|Your attempt to move was (awkward|unprepared|reckless)!/;
+const frontMemoryMoveMatch = / And the movement is successfully and (graceful|fluid|agile).| But the attempt to move was (awkward|unprepared|reckless)!/;
 const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction).| But the words are (awkward|unconvincing|ineffectual)!/;
 const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless).| But fail, managing to be (clumsy|inept|futile)!/;
 

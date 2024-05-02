@@ -1,5 +1,6 @@
 // Every script needs a modifier function
-const modifier = (text) => {// ++++++++++++++++++++++++
+const modifier = (text) => {
+    // ++++++++++++++++++++++++
     // ++++++++++++++++++++++++
     // DO NOT EDIT THIS SECTION
     // ++++++++++++++++++++++++
@@ -632,8 +633,8 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
             successEndings: ["agile", "graceful", "fluid"],
             failureEndings: ["unprepared", "reckless", "awkward"],
-            successStart: "Your movement is successfully and",
-            failureStart: "Your attempt to move was",
+            successStart: "the movement is successfully and",
+            failureStart: "the attempt to move was",
             coolDownPhrase: "barely able to move",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -654,7 +655,7 @@ const modifier = (text) => {// ++++++++++++++++++++++++
                 remainingTurns: 0
             },
             memorable: true,
-            knownFor: "a skilled mover",
+            knownFor: "parkour master",
             memorableThreshold: 3,
             isResource: false,
             resources: [],
@@ -662,9 +663,9 @@ const modifier = (text) => {// ++++++++++++++++++++++++
         {
             name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
             successEndings: ["perceptive", "attentive", "detailed"],
-            failureEndings: ["overlooked", "distracted", "cursory"],
-            successStart: "You observe carefully and",
-            failureStart: "Despite your efforts to notice details, you are",
+            failureEndings: ["overlooking", "being distracted", "lack of depth"],
+            successStart: "the observation is successful and",
+            failureStart: "failing to notice the details you fail by",
             coolDownPhrase: "unable to focus",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -694,8 +695,8 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             name: ["performance", "dancing", "singing", "jokes"],
             successEndings: ["perceptive", "engaging", "lively"],
             failureEndings: ["overlooked", "distracted", "bland"],
-            successStart: "The preform performance is ",
-            failureStart: "Despite your efforts, you are",
+            successStart: "the preform performance is",
+            failureStart: "despite the efforts, the performance is",
             coolDownPhrase: "preforming poorly",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -725,8 +726,8 @@ const modifier = (text) => {// ++++++++++++++++++++++++
             name: ["first-aid", "medicine", "medical"],
             successEndings: ["life saving", "skillful", "precise"],
             failureEndings: ["misjudged", "ineffective", "reckless"],
-            successStart: "The first-aid",
-            failureStart: "Your first-aid proves",
+            successStart: "the first-aid attempt succeeds and is",
+            failureStart: "the attempt at first-aid proves",
             coolDownPhrase: "are out of first-aid supplies",
             note: "",
             rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
