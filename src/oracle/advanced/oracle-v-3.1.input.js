@@ -40,9 +40,9 @@ const getNextItem = (arr, currentIndex) => {
  * @param {number} upperBound
  * @returns Adjusted number
  *  ----------------------------------
- * Accounts only for the lower bound
+ * Accounts for only a lower bound
  * @param {number} number number to check
- * @param {number} lowerBound required
+ * @param {number} lowerBound
  * @returns Adjusted number
  */
 const checkWithinBounds = (number, lowerBound, upperBound) => {
@@ -213,7 +213,7 @@ class Leveling {
  * @param {number} decreaseRatePerAction How quick the cool down rate goes down per player turn
  * @param {number} failureThreshold The failure threshold for when to cool down actions
  * @param {number} failureCount The current count
- * @param {number} remainingTurns The remaining Cool down turns
+ * @param {number} remainingTurns The remaining number of turns an action is cooling down
  */
 class CoolDown {
     constructor(coolDown) {
@@ -223,6 +223,34 @@ class CoolDown {
         this.failureCount = coolDown.failureCount;
         this.remainingTurns = coolDown.remainingTurns;
     }
+    /**
+     * Increases the cool down.
+     */
+    /*increase() {
+        if (this.enabled) {
+            
+            //If action is already cooling down
+            if (this.remainingTurns > 0) {
+                this.remainingTurns = Math.max(this.failureThreshold, this.remainingTurns + 1);
+            }
+            //If action is not cooling down
+            else {
+
+                this.failureCount++;
+
+                //Check if the failure count has crossed the threshold
+                if (this.failureCount >= this.failureThreshold) {
+                    this.remainingTurns = this.failureThreshold;
+                }
+            }
+        }
+    }
+    decrease() {
+        if (this.enabled) {
+            this.remainingTurns = Math.max(0, this.remainingTurns - this.decreaseRatePerAction);
+        }
+    }*/
+    
     /**
      * Increases the cool down.
      */
@@ -299,6 +327,7 @@ class Action {
         this.memorableThreshold = action.memorableThreshold;
         this.isResource = action.isResource;
         this.resources = action.resources.map(r=>new ActionResource(r));
+        this.preventAction = {};
     }
 
     /**
@@ -314,16 +343,27 @@ class Action {
         return (isSuccess ? " And " : " But ") + message;
     }
 
-    updateRate(isSuccess, isIncrease) {
-        if (this.leveling.increaseEnabled && isIncrease) {
-            const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
-            this.rate = Math.min(this.leveling.maxRate, newRate);
+    updateRate(isSuccess, isActiveAction) {
+        
+        const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
+        //Processes the action used by a user
+        if (isActiveAction) {
+
+            if (newRate >= this.rate && this.leveling.increaseEnabled) {
+                this.rate = Math.min(newRate, this.leveling.maxRate);
+            }
+            if (newRate < this.rate && this.leveling.decreaseEnabled) {
+                this.rate = Math.max(newRate, this.leveling.minRate);
+            }
         }
-        if (this.leveling.decreaseEnabled && !isIncrease) {
+
+        else if (this.leveling.decreaseEnabled) {
             this.rate = Math.max(this.leveling.minRate, this.rate - this.leveling.decreaseRate);
         }
     }
 }
+
+
 
 class StatusEffects {
     constructor(statusEffects) {
@@ -366,11 +406,12 @@ class Player {
         this.eventSystem = player.eventSystem.map(e => new EventSystem(e));
         this.exhaustion = new Exhaustion(player.exhaustion);
         this.threat = new Threat(player.threat);
+        this.disableActions = {};
     }
 
-    updateActions(isSuccess, actionName) {
-        this.actions.forEach(a => {
-            a.updateRate(isSuccess, a.name.includes(actionName));
+    updateActions(actionName, isSuccess) {
+        this.actions.forEach(currentAction => {
+            currentAction.updateRate(isSuccess, currentAction.name.includes(actionName));
         });
     }
 
@@ -1000,48 +1041,83 @@ const tester = (state, text, history, storyCards, info) => {
             return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
         }
 
+        // Adjust a action's success rate dynamically based on outcome
+        const setActionState = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                // Increase the action rate more significantly the lower the current action level is.
+                const calculateNewRate = isSuccess => {
+                    return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
+                }
+                adjustActionLevel(action, calculateNewRate(isSuccess), isSuccess);
+            }
+        }
+
+        const adjustActionLevel = (action, newRate, isSuccess) => {
+            if (newRate >= action.rate && action.leveling.increaseEnabled) {
+                checkWithinBounds(newRate, action.leveling.maxRate);
+            }
+            else if (action.leveling.decreaseEnabled) {
+                checkWithinBounds(newRate, action.leveling.minRate);
+            }
+        }
+
         /**
          * Determine success or failure of a action
          * @param {action} action The action to check.
          * @returns {boolean} The success or failure of the action check.
          */
         const determineFate = (action) => {
-            if (action.coolDown.enabled && (action.coolDown.remainingTurns > 0)) {
+            //Check if the action is disabled
+            if (Object.values(action.preventAction).includes(true) || Object.values(activePlayer).includes(true)) {
                 return false;
             }
             const success = Math.random() < action.rate;
-            if (success) {
-                processReputation(action);
-            }
             const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
             game.messages = [message];
             return success;
         }
 
+        
+
+        
+
+        
+
+        
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// START MODULE PROCESSING ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
+    //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+    //Arguments go as: (isActiveTurn, action, isSuccess)
+    //All processing functions must account for a case where (action === undefined)
+
         /**
-         * Process all the actions providing an update to each non active action.
-         * @param {string} name The Name of the action being used actively and action being ignored for updates.
+         * Array for modules that aren't sensitive to the order of processing
          */
-        const processActionsCoolDown = (name, isSuccess) => {
-            if (isSuccess) {
-                game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
-                activePlayer.actions.forEach(a => {
-                    if (a.name !== name && a.coolDown > 0) {
-                        a.coolDown += -a.coolDown.decreaseRatePerAction;
-                    }
-                });
-            } else {
-                activePlayer.actions.find(a => a.name.includes(name)).coolDown.increase();
-            }
-        }
+        let moduleProcessingGeneral = [];
+
+        /**
+         * Array for modules that must be called after the general processing is complete
+         */
+        let moduleProcessingLast = [];
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Default Modules (WARNING DO NOT TOUCH) +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//////// Player Activity //////////////////////////////////////////////////////////////////////////
 
         /**
          * Logic for handling the player exhaustion.
          * @param {boolean} active If the player turn is an active one.
          */
-        const processPlayerActivity = (active) => {
-            if (!activePlayer.exhaustion.enabled) return;
-            if (active) {
+        const processPlayerActivity = (isActiveTurn) => {
+            if (isActiveTurn) {
                 activePlayer.exhaustion.inactive = 0;
                 activePlayer.exhaustion.active = checkWithinBounds(activePlayer.exhaustion.active + 1, 0, Number.MAX_SAFE_INTEGER);
                 activePlayer.threat.active = checkWithinBounds(activePlayer.threat.active + 1, 0, Number.MAX_SAFE_INTEGER);
@@ -1053,37 +1129,168 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
+        if (activePlayer.exhaustion.enabled) {
+            moduleProcessingGeneral.push(processPlayerActivity);
+        }
+
+//////// Action Cooldown //////////////////////////////////////////////////////////////////////////
+
+
+        /**
+         * Process all the actions providing an update to each non active action.
+         * @param {boolean} isActiveTurn 
+         * @param {action} action The action being used actively
+         */
+        const processActionsCoolDown = (isActiveTurn, activeAction, isSuccess) => {
+            game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
+            //If an action was supplied
+            if (activeAction) {
+                
+                //Increase the fail count
+                if (!isSuccess) {
+                    activeAction.coolDown.increase();
+                }
+            }
+
+            //If an action was not supplied
+            else {
+                activePlayer.actions.forEach(currentAction => {
+                    if (currentAction.coolDown.failureCount > 0) {
+                        currentAction.coolDown.decrease();
+                    }
+                });
+            }
+
+            activePlayer.actions.forEach(currentAction => {
+                if (currentAction.coolDown.remainingTurns > 0) {
+                    currentAction.preventAction.cooldownToggle = true;
+                }
+                else {
+                    currentAction.preventAction.cooldownToggle = false;
+                }
+            });
+        }
+
+        //Toggle for Action Cooldown module
+        if (true) {
+
+
+            moduleProcessingGeneral.push(processActionsCoolDown);
+
+            //Initialize cooldown toggle for preventing actions. I play to make a class for modules with functions to handle this.
+            state.game.players.forEach(p => p.actions.forEach(currentAction => {
+                if (!currentAction.preventAction.cooldownToggle) {
+                    currentAction.preventAction.cooldownToggle = false;
+                }
+            }));
+        }
+
+//////// Player Reputation ////////////////////////////////////////////////////////////////////////
+
+
+        const processReputation = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
+                    activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                    activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
+                }
+            }
+        }
+
+        //moduleProcessingGeneral.push(processReputation);
+
+//////// Update Player Resources  /////////////////////////////////////////////////////////////////
+
+
+        const setPlayerResources = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                activePlayer.setResources(action, isSuccess);
+            }
+        }
+
+        moduleProcessingLast.push(setPlayerResources);
+
+//////// Update Player Actions  ///////////////////////////////////////////////////////////////////
+
+        const updatePlayerActions = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                activePlayer.updateActions(action.name[0], isSuccess);
+            }
+        }
+
+        moduleProcessingLast.push(updatePlayerActions);
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// End Default Modules (WARNING DO NOT TOUCH) +++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// END MODULE PROCESSING ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        
+
+        /**
+         * Handles the processing for game modules.
+         * @param {*} isActiveTurn 
+         * @param {*} action 
+         * @param {*} isSuccess 
+         */
+        const callModuleProcessing = (isActiveTurn, action, isSuccess) => {
+            moduleProcessingGeneral.forEach(currentFunction => {currentFunction.apply(null, [isActiveTurn, action, isSuccess])});
+            moduleProcessingLast.forEach(currentFunction => {currentFunction.apply(null, [isActiveTurn, action, isSuccess])});
+        }
+        
+
         /**
          * The action command parse for use as command parse and entry point.
          * @param {string} text The user imputed text.
          */
         const actionParse = () => {
+            let isActiveTurn;
             if (isDoAction && !isSpeechAction) {
                 const action = getActionByName((actionMatch[3] || "default"));
+                isActiveTurn = true;
                 const isSuccess = determineFate(action);
-                processActionsCoolDown(action.name[0], isSuccess);
-                activePlayer.setResources(isSuccess, action.name[0]);
-                activePlayer.updateActions(isSuccess, action.name[0]);
+                callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
                 // If speech is captured
                 const action = getActionByName("charisma");
+                isActiveTurn = false;
                 const isSuccess = determineFate(action);
-                processPlayerActivity(false);
-                processActionsCoolDown(action.name[0], isSuccess);
-                activePlayer.setResources(isSuccess, action.name[0]);
-                activePlayer.updateActions(isSuccess, action.name[0]);
+                callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else {
-                processPlayerActivity(false);
+                isActiveTurn = false;
+                callModuleProcessing(isActiveTurn);
                 return "";  // No relevant action found
             }
         }
 
-        const processReputation = (action) => {
-            if (game.enableReputationSystem && (Math.random() < action.memorable)) {
-                activePlayer.actionHistory.push(new ActionHistory(action.name[0], 1));
-                activePlayer.actionHistory = activePlayer.actionHistory.slice(game.actionHistorySize);
+        
+
+        /**
+         * Accounts for both an upper and lower bound
+         *
+         * @param {number} number number to check
+         * @param {number} lowerBound
+         * @param {number} upperBound
+         * @returns Adjusted number
+         *  ----------------------------------
+         * Accounts only for the lower bound
+         * @param {number} number number to check
+         * @param {number} lowerBound required
+         * @returns Adjusted number
+         */
+        const checkWithinBounds = (number, lowerBound, upperBound) => {
+            if (upperBound === undefined) {
+                return Math.max(number, lowerBound);
+            } else {
+                return Math.min(Math.max(number, lowerBound), upperBound);
             }
         }
 

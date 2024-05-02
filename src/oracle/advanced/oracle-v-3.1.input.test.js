@@ -66,7 +66,7 @@ test("Test Leveling Class", () => {
     expect(action.rate).toBe(.51);
     action.updateRate(false, false);
     expect(action.rate).toBe(0.5098333333333334);
-    state.game.players[0].updateActions(true, "charisma");
+    state.game.players[0].updateActions("charisma", true);
     expect(action.rate).toBe(0.5198333333333334);
 });
 
