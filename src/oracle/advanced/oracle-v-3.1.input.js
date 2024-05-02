@@ -1090,32 +1090,6 @@ const tester = (state, text, history, storyCards, info) => {
 // Default Modules (WARNING DO NOT TOUCH) +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
-//////// Action/Player Resources //////////////////////////////////////////////////////////////////
-
-        const processActionResource = (isActiveTurn, action) => {
-            if (action) {
-                if (isActiveTurn && action.isResource && action.resource.type !== "") {
-                    const resource = activePlayer.resources.find(r => r.type === action.resource.type);
-                    if (resource) {
-                        if (action.resource.isIncreasing) {
-                            resource.value += action.resource.modify;
-                        } else {
-                            resource.value -= action.resource.modify;
-                        }
-                        resource.value = Math.min(resource.max, Math.max(resource.min, resource.value));
-                        resource.thresholds.forEach(t => {
-                            if (resource.value >= t.threshold) {
-                                game.messages.push(t.message);
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-        moduleProcessingGeneral.push(processActionResource);
-
 //////// Player Activity //////////////////////////////////////////////////////////////////////////
 
         /**
@@ -1203,7 +1177,7 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        moduleProcessingGeneral.push(processReputation);
+        //moduleProcessingGeneral.push(processReputation);
 
 //////// Update Player Resources  /////////////////////////////////////////////////////////////////
 
