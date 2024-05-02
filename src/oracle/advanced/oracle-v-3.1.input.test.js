@@ -21,14 +21,12 @@ const info = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-const authorsNoteRegEx = /(|\[You are, unable to make sense, a skilled fighter\.\] \[Bob is, unable to make sense, a skilled fighter\.\] )(It is thundering outside\.|There is a thick fog outside\.|It is clear outside\.|There are clouds outside\.|There are clouds and precipitation outside\.) Style Keywords: Light, breezy, punchy, whimsical, comedic\. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining\./
+const authorsNoteRegEx = /(|\[You are, unable to make sense, a skilled fighter\.\] \[Bob is, unable to make sense, a skilled fighter\.\] )(It is thundering outside\.|There is a thick fog outside\.|It is clear outside\.|There are clouds outside\.|There are clouds and precipitation outside\.) Style Keywords: Light, breezy, punchy, whimsical, comedic\. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual\. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining\./
 
-const frontMemoryFightMatch = / And the attack is made with (deadly precision|brutal efficiency|unyielding determination).| But the attack proves (misjudged|ineffective|reckless)!/;
-const frontMemoryMoveMatch = / And the movement is successfully and (graceful|fluid|agile).| But the attempt to move was (awkward|unprepared|reckless)!/;
-const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction).| But the words are (awkward|unconvincing|ineffectual)!/;
-const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless).| But fail, managing to be (clumsy|inept|futile)!/;
-
-const weatherMatch = /(It is thundering outside\.|There is a thick fog outside\.|It is clear outside\.|There are clouds outside\.|There are clouds and precipitation outside\.)/
+const frontMemoryFightMatch = / And the attack is made with (deadly precision|brutal efficiency|unyielding determination)\.| But the attack proves (misjudged|ineffective|reckless)!/;
+const frontMemoryMoveMatch = / And the movement is successfully and (graceful|fluid|agile)\.| But the attempt to move was (awkward|unprepared|reckless)!/;
+const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction)\.| But the words are (awkward|unconvincing|ineffectual)!/;
+const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless)\.| But fail, managing to be (clumsy|inept|futile)!/;
 
 test("Test Player Class", () => {
     expect(state.game.players[0].name).toBe("You");
@@ -57,6 +55,10 @@ test("Test CoolDown Class", () => {
     expect(coolDown.failureCount).toBe(2);
     coolDown.decrease();
     expect(coolDown.failureCount).toBe(1);
+    coolDown.increase();
+    coolDown.increase();
+    expect(coolDown.remainingTurns).toBe(3);
+    expect(coolDown.failureCount).toBe(0);
 });
 
 test("Test Leveling Class", () => {
@@ -70,12 +72,6 @@ test("Test Leveling Class", () => {
     expect(action.rate).toBe(0.5198333333333334);
 });
 
-test("Test getRandomItem", () => {
-    const arr = [1, 2, 3, 4, 5];
-    const item = getRandomItem(arr);
-    expect(arr.includes(item)).toBe(true);
-});
-
 test("Test getNextItem", () => {
     const arr = [1, 2, 3, 4, 5];
     const currentIndex = 2;
@@ -87,21 +83,12 @@ test("Test checkWithinBounds", () => {
     const number = 10;
     const lowerBound = 5;
     const upperBound = 15;
-    const adjustedNumber = checkWithinBounds(number, lowerBound, upperBound);
+    const adjustedNumber = checkWithinBounds(number, lowerBound);
     expect(adjustedNumber).toBe(number);
 
     const number2 = 20;
     const adjustedNumber2 = checkWithinBounds(number2, lowerBound, upperBound);
     expect(adjustedNumber2).toBe(upperBound);
-});
-
-test("Test startingActionRate", () => {
-    const starting = 0.4;
-    const min = 0.01;
-    const max = 0.2;
-    const actionRate = startingActionRate(starting, min, max);
-    expect(actionRate).toBeLessThan(max+starting+0.01);
-    expect(actionRate).toBeGreaterThan(starting);
 });
 
 test("Test getCopular", () => {
@@ -110,6 +97,7 @@ test("Test getCopular", () => {
     expect(getCopular("I")).toBe("am");
 });
 
+const weatherMatch = /(It is thundering outside\.|There is a thick fog outside\.|It is clear outside\.|There are clouds outside\.|There are clouds and precipitation outside\.)/;
 test("Test Change Event", () => {
     state.game.eventSystem.forEach(e => {
         e.changeEvent(.05);
@@ -117,7 +105,23 @@ test("Test Change Event", () => {
     });
 });
 
+// Used for testing the random outcomes of the items tested.
 for (let index = 0; index < loops; index++) {
+
+    test("Test getRandomItem", () => {
+        const arr = [1, 2, 3, 4, 5];
+        const item = getRandomItem(arr);
+        expect(arr.includes(item)).toBe(true);
+    });
+
+    test("Test startingActionRate", () => {
+        const starting = 0.4;
+        const min = 0.01;
+        const max = 0.2;
+        const actionRate = startingActionRate(starting, min, max);
+        expect(actionRate).toBeLessThan(max + starting + 0.01);
+        expect(actionRate).toBeGreaterThan(starting);
+    });
 
     test("Test Change Event", () => {
         state.game.eventSystem.forEach(e => {
