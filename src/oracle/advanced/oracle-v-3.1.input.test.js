@@ -1,4 +1,4 @@
-const { tester, getRandomItem, getNextItem, getIsOrAre, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultGame, defaultPlayer, defaultResource, defaultAction, defaultActionHistory, defaultEventSystem, defaultExhaustion, defaultThreat, defaultActionRate, customActions } = require("./oracle-v-3.1.input");
+const { tester, getRandomItem, getNextItem, getCopular, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, CoolDown, defaultGame, defaultPlayer, defaultResource, defaultAction, defaultActionHistory, defaultEventSystem, defaultExhaustion, defaultThreat, defaultActionRate, customActions } = require("./oracle-v-3.1.input");
 const loops = 100;
 const state = {
     memory: { context: "This is the memory", authorsNote: "This is the authors note" },
@@ -23,7 +23,7 @@ const info = {
 };
 const authorsNoteRegEx = /(|\[You are, unable to make sense, a skilled fighter.\] \[Bob is, unable to make sense, a skilled fighter.\] )It is thundering outside. Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining./
 
-const frontMemoryFightMatch = /The attack (made with deadly precision|is brutal efficiency|has unyielding resolve).| But the attack proves (misjudged|ineffective|reckless)!/;
+const frontMemoryFightMatch = / And the attack is made with (deadly precision|brutal efficiency|unyielding determination).| But the attack proves (misjudged|ineffective|reckless)!/;
 const frontMemoryMoveMatch = /Your movement is successfully and (graceful|fluid|agile).|Your attempt to move was (awkward|unprepared|reckless)!/;
 const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction).| But the words are (awkward|unconvincing|ineffectual)!/;
 const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless).| But fail, managing to be (clumsy|inept|futile)!/;
@@ -39,9 +39,33 @@ test("Test Player Class", () => {
     expect(state.game.players[0].resources[0].value).toBe(10);
     expect(state.game.players[0].getResourceThresholds()).toStrictEqual(["in good health"]);
     expect(state.game.players[0].getStatus()).toBe("[You are, unable to make sense, a skilled fighter, in good health.]");
+});
 
+test("Test Action Class", () => {
+    const action = state.game.players[0].actions[1];
+    expect(action.name.includes("speech")).toBe(true);
+    expect(action.rate).toBe(0.5);
+});
+
+test("Test CoolDown Class", () => {
+    const coolDown = state.game.players[0].actions[1].coolDown;
+    expect(coolDown.failureThreshold).toBe(3);
+    coolDown.increase();
+    coolDown.increase();
+    expect(coolDown.failureCount).toBe(2);
+    coolDown.decrease();
+    expect(coolDown.failureCount).toBe(1);
+});
+
+test("Test Leveling Class", () => {
+    const action = state.game.players[0].actions[1];
+    expect(action.rate).toBe(.50);
+    action.updateRate(true, true);
+    expect(action.rate).toBe(.51);
+    action.updateRate(false, false);
+    expect(action.rate).toBe(0.5098333333333334);
     state.game.players[0].updateActions(true, "charisma");
-    expect(state.game.players[0].actions[1].rate).toBeGreaterThan(0.5);
+    expect(action.rate).toBe(0.5198333333333334);
 });
 
 test("Test getRandomItem", () => {
@@ -78,10 +102,10 @@ test("Test startingActionRate", () => {
     expect(actionRate).toBeGreaterThan(starting);
 });
 
-test("Test getIsOrAre", () => {
-    expect(getIsOrAre("You")).toBe("are");
-    expect(getIsOrAre("Bob")).toBe("is");
-    expect(getIsOrAre("I")).toBe("am");
+test("Test getCopular", () => {
+    expect(getCopular("You")).toBe("are");
+    expect(getCopular("Bob")).toBe("is");
+    expect(getCopular("I")).toBe("am");
 });
 
 for (let index = 0; index < loops; index++) {
