@@ -325,9 +325,9 @@ class Action {
 
     updateRate(isSuccess, isActiveAction) {
         
+        const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
+        //Processes the action used by a user
         if (isActiveAction) {
-            const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
-            
 
             if (newRate >= this.rate && this.leveling.increaseEnabled) {
                 this.rate = Math.min(newRate, this.leveling.maxRate);
@@ -335,10 +335,10 @@ class Action {
             if (newRate < this.rate && this.leveling.decreaseEnabled) {
                 this.rate = Math.max(newRate, this.leveling.minRate);
             }
-
         }
+
         else if (this.leveling.decreaseEnabled) {
-            this.rate = Math.min(this.leveling.minRate, this.rate - this.leveling.decreaseRate);
+            this.rate = Math.max(this.leveling.minRate, this.rate - this.leveling.decreaseRate);
         }
     }
 }
@@ -389,9 +389,9 @@ class Player {
         this.disableActions = {};
     }
 
-    updateActions(activeAction, isSuccess) {
+    updateActions(actionName, isSuccess) {
         this.actions.forEach(currentAction => {
-            currentAction.updateRate(isSuccess, currentAction.name.includes(activeAction.name[0]));
+            currentAction.updateRate(isSuccess, currentAction.name.includes(actionName));
         });
     }
 
@@ -1194,7 +1194,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         const updatePlayerActions = (isActiveTurn, action, isSuccess) => {
             if (action) {
-                activePlayer.updateActions(action, isSuccess);
+                activePlayer.updateActions(action.name[0], isSuccess);
             }
         }
 
