@@ -228,7 +228,7 @@ class CoolDown {
      */
     /*increase() {
         if (this.enabled) {
-            
+
             //If action is already cooling down
             if (this.remainingTurns > 0) {
                 this.remainingTurns = Math.max(this.failureThreshold, this.remainingTurns + 1);
@@ -250,7 +250,7 @@ class CoolDown {
             this.remainingTurns = Math.max(0, this.remainingTurns - this.decreaseRatePerAction);
         }
     }*/
-    
+
     /**
      * Increases the cool down.
      */
@@ -259,6 +259,7 @@ class CoolDown {
             this.failureCount = Math.min(this.failureThreshold, this.failureCount + 1);
             if (this.failureCount >= this.failureThreshold) {
                 this.remainingTurns = this.failureThreshold;
+                this.failureCount = 0;
             }
         }
     }
@@ -326,7 +327,7 @@ class Action {
         this.knownFor = action.knownFor;
         this.memorableThreshold = action.memorableThreshold;
         this.isResource = action.isResource;
-        this.resources = action.resources.map(r=>new ActionResource(r));
+        this.resources = action.resources.map(r => new ActionResource(r));
         this.preventAction = {};
     }
 
@@ -344,7 +345,7 @@ class Action {
     }
 
     updateRate(isSuccess, isActiveAction) {
-        
+
         const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
         //Processes the action used by a user
         if (isActiveAction) {
@@ -416,7 +417,7 @@ class Player {
     }
 
     getCoolDownPhrase() {
-        return this.actions.filter(a => a.coolDown.remainingTurns > 0 && a.coolDown.enabled).map(a => a.coolDownPhrase).filter(e =>e!="");
+        return this.actions.filter(a => a.coolDown.remainingTurns > 0 && a.coolDown.enabled).map(a => a.coolDownPhrase).filter(e => e != "");
     }
 
     getStatus() {
@@ -910,7 +911,7 @@ const defaultPlayerYou = {
                 { threshold: 1, message: "critically injured" },
                 { threshold: 4, message: "injured" },
                 { threshold: 7, message: "slightly injured" },
-                { threshold: 99, message: "in good health" },
+                { threshold: Infinity, message: "in good health" },
             ],
         },
     ],
@@ -984,6 +985,8 @@ const defaultGame = {
 // ++++++++++++++++++++++++
 // ++++++++++++++++++++++++
 
+
+// Anything inside of tester has to be tested as a whole. No objects, classes or variables can be tested individually inside of tester. For this reason, it is HIGHLY recommended to only put items in tester that have to alter state, text, history, storyCards, or info. All other objects should be outside of tester.
 const tester = (state, text, history, storyCards, info) => {
     // The Oracle of Delphi is a game engine that adds a new level of depth to AI Dungeon.
     // DO NOT CHANGE ANYTHING BELOW THIS LINE!
@@ -1041,26 +1044,6 @@ const tester = (state, text, history, storyCards, info) => {
             return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
         }
 
-        // Adjust a action's success rate dynamically based on outcome
-        const setActionState = (isActiveTurn, action, isSuccess) => {
-            if (action) {
-                // Increase the action rate more significantly the lower the current action level is.
-                const calculateNewRate = isSuccess => {
-                    return action.leveling.rateOfChange * (1 + ((action.rate * isSuccess ? 1 : action.leveling.rateOfChangeFailureMultiplier) / action.leveling.maxRate));
-                }
-                adjustActionLevel(action, calculateNewRate(isSuccess), isSuccess);
-            }
-        }
-
-        const adjustActionLevel = (action, newRate, isSuccess) => {
-            if (newRate >= action.rate && action.leveling.increaseEnabled) {
-                checkWithinBounds(newRate, action.leveling.maxRate);
-            }
-            else if (action.leveling.decreaseEnabled) {
-                checkWithinBounds(newRate, action.leveling.minRate);
-            }
-        }
-
         /**
          * Determine success or failure of a action
          * @param {action} action The action to check.
@@ -1077,24 +1060,18 @@ const tester = (state, text, history, storyCards, info) => {
             return success;
         }
 
-        
 
-        
+        //++++++++++++++++++++++++
+        //++++++++++++++++++++++++
+        // START MODULE PROCESSING
+        //++++++++++++++++++++++++
+        //++++++++++++++++++++++++
 
-        
 
-        
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// START MODULE PROCESSING ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
-    //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
-    //Arguments go as: (isActiveTurn, action, isSuccess)
-    //All processing functions must account for a case where (action === undefined)
+        //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
+        //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+        //Arguments go as: (isActiveTurn, action, isSuccess)
+        //All processing functions must account for a case where (action === undefined)
 
         /**
          * Array for modules that aren't sensitive to the order of processing
@@ -1106,11 +1083,14 @@ const tester = (state, text, history, storyCards, info) => {
          */
         let moduleProcessingLast = [];
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Default Modules (WARNING DO NOT TOUCH) +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Default Modules (WARNING DO NOT TOUCH)
+        // ++++++++++++++++++++++++++++++++++++++++
 
-//////// Player Activity //////////////////////////////////////////////////////////////////////////
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Player Activity
+        // ++++++++++++++++++++++++++++++++++++++++
 
         /**
          * Logic for handling the player exhaustion.
@@ -1133,19 +1113,21 @@ const tester = (state, text, history, storyCards, info) => {
             moduleProcessingGeneral.push(processPlayerActivity);
         }
 
-//////// Action Cooldown //////////////////////////////////////////////////////////////////////////
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Action Cooldown
+        // ++++++++++++++++++++++++++++++++++++++++
 
 
         /**
          * Process all the actions providing an update to each non active action.
-         * @param {boolean} isActiveTurn 
+         * @param {boolean} isActiveTurn If the turn is active
          * @param {action} action The action being used actively
          */
         const processActionsCoolDown = (isActiveTurn, activeAction, isSuccess) => {
             game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
             //If an action was supplied
             if (activeAction) {
-                
+
                 //Increase the fail count
                 if (!isSuccess) {
                     activeAction.coolDown.increase();
@@ -1185,7 +1167,9 @@ const tester = (state, text, history, storyCards, info) => {
             }));
         }
 
-//////// Player Reputation ////////////////////////////////////////////////////////////////////////
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Player Reputation
+        // ++++++++++++++++++++++++++++++++++++++++
 
 
         const processReputation = (isActiveTurn, action, isSuccess) => {
@@ -1199,7 +1183,10 @@ const tester = (state, text, history, storyCards, info) => {
 
         //moduleProcessingGeneral.push(processReputation);
 
-//////// Update Player Resources  /////////////////////////////////////////////////////////////////
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Update Player Resources
+        // ++++++++++++++++++++++++++++++++++++++++
+
 
 
         const setPlayerResources = (isActiveTurn, action, isSuccess) => {
@@ -1210,7 +1197,9 @@ const tester = (state, text, history, storyCards, info) => {
 
         moduleProcessingLast.push(setPlayerResources);
 
-//////// Update Player Actions  ///////////////////////////////////////////////////////////////////
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Update Player Actions
+        // ++++++++++++++++++++++++++++++++++++++++
 
         const updatePlayerActions = (isActiveTurn, action, isSuccess) => {
             if (action) {
@@ -1220,30 +1209,26 @@ const tester = (state, text, history, storyCards, info) => {
 
         moduleProcessingLast.push(updatePlayerActions);
 
+        // ++++++++++++++++++++++++++++++++++++++++
+        // End Default Modules (WARNING DO NOT TOUCH)
+        // ++++++++++++++++++++++++++++++++++++++++
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// End Default Modules (WARNING DO NOT TOUCH) +++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// END MODULE PROCESSING ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        
+        // ++++++++++++++++++++++++++++++++++++++++
+        // ++++++++++++++++++++++++++++++++++++++++
+        // END MODULE PROCESSING
+        // ++++++++++++++++++++++++++++++++++++++++
+        // ++++++++++++++++++++++++++++++++++++++++
 
         /**
          * Handles the processing for game modules.
-         * @param {*} isActiveTurn 
-         * @param {*} action 
-         * @param {*} isSuccess 
+         * @param {*} isActiveTurn If the turn is active.
+         * @param {*} action The action being used actively.
+         * @param {*} isSuccess If the action was a success.
          */
         const callModuleProcessing = (isActiveTurn, action, isSuccess) => {
-            moduleProcessingGeneral.forEach(currentFunction => {currentFunction.apply(null, [isActiveTurn, action, isSuccess])});
-            moduleProcessingLast.forEach(currentFunction => {currentFunction.apply(null, [isActiveTurn, action, isSuccess])});
+            moduleProcessingGeneral.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
+            moduleProcessingLast.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
         }
-        
 
         /**
          * The action command parse for use as command parse and entry point.
@@ -1268,29 +1253,6 @@ const tester = (state, text, history, storyCards, info) => {
                 isActiveTurn = false;
                 callModuleProcessing(isActiveTurn);
                 return "";  // No relevant action found
-            }
-        }
-
-        
-
-        /**
-         * Accounts for both an upper and lower bound
-         *
-         * @param {number} number number to check
-         * @param {number} lowerBound
-         * @param {number} upperBound
-         * @returns Adjusted number
-         *  ----------------------------------
-         * Accounts only for the lower bound
-         * @param {number} number number to check
-         * @param {number} lowerBound required
-         * @returns Adjusted number
-         */
-        const checkWithinBounds = (number, lowerBound, upperBound) => {
-            if (upperBound === undefined) {
-                return Math.max(number, lowerBound);
-            } else {
-                return Math.min(Math.max(number, lowerBound), upperBound);
             }
         }
 
@@ -1357,15 +1319,16 @@ const tester = (state, text, history, storyCards, info) => {
             game.authorsNote,
         ].filter(e = e => e !== "").join(" ").trim();
 
-        // // Notify the player of the status.
-        // if (game.enablePlayerMessage) {
-        //     state.message = "This is not enabled yet as the message system is not fully implemented on AI Dungeon.";
-        //     game.messages = [];
-        // }
+        // Notify the player of the status.
+        if (game.enablePlayerMessage) {
+            // This is not enabled yet as the message system is not fully implemented on AI Dungeon.
+            // state.message = "";
+            game.messages = [];
+        }
         state.game = game;
     }
     oracle();
 
     return { state, text, history, storyCards, info }
 }
-module.exports = { tester, getRandomItem, getNextItem, getCopular, checkWithinBounds, startingActionRate, Game, Player, CoolDown, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions};
+module.exports = { tester, getRandomItem, getNextItem, getCopular, checkWithinBounds, startingActionRate, Game, Player, CoolDown, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions };
