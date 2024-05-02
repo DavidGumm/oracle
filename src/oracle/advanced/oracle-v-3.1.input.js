@@ -7,10 +7,22 @@
 // This is the default rate for a new action.
 // Do not change this function, change the values in defaultActionRate.
 // Helper functions
+
+/**
+ * Gets a random item from an array.
+ * @param {[]} arr An array of items.
+ * @returns A random item from the array or null if the array is empty.
+ */
 const getRandomItem = (arr) => {
-    return arr[Math.floor(Math.random() * arr.length)] || arr[0];
+    return arr[Math.floor(Math.random() * arr.length)] || null;
 }
 
+/**
+ * Gets the next item in the array.
+ * @param {[]} arr Array of items.
+ * @param {Number} currentIndex The current index.
+ * @returns The next item in the array.
+ */
 const getNextItem = (arr, currentIndex) => {
     if (!arr.length) {
         throw new Error('Array cannot be empty.');
@@ -41,11 +53,23 @@ const checkWithinBounds = (number, lowerBound, upperBound) => {
     }
 }
 
+/**
+ * Gets a random starting action rate.
+ * @param {Number} starting The base starting number
+ * @param {Number} min The minimum value to be added.
+ * @param {Number} max The maximum value to be added.
+ * @returns The starting action rate.
+ */
 const startingActionRate = (starting, min, max) => {
     return starting + (Math.random() * (min - max) + max)
 }
 
-const getIsOrAre = (who) => {
+/**
+ * Gets the correct is or are for the point of view.
+ * @param {String} who Who is the POV for.
+ * @returns The correct is or are for the POV.
+ */
+const getCopular = (who) => {
     switch (who) {
         case "You":
             return "are";
@@ -105,15 +129,17 @@ class EventSystem {
         this.description = eventSystem.description;
         this.isRandom = eventSystem.isRandom;
     }
-    changeEvent() {
-        if (Math.random() < this.chance) {
+    /**
+     * Changes the event.
+     */
+    changeEvent(chance) {
+        if (chance < this.chance) {
             if (this.isRandom) {
                 const random = Math.random();
-                this.events.every(e => {
+                this.events.forEach(e => {
                     if (random < e.chance) {
                         this.current = e;
                         this.description = e.description;
-                        return false;
                     }
                 });
             } else {
@@ -197,6 +223,9 @@ class CoolDown {
         this.failureCount = coolDown.failureCount;
         this.remainingTurns = coolDown.remainingTurns;
     }
+    /**
+     * Increases the cool down.
+     */
     increase() {
         if (this.enabled) {
             
@@ -219,7 +248,6 @@ class CoolDown {
     decrease() {
         if (this.enabled) {
             this.remainingTurns = Math.max(0, this.remainingTurns - this.decreaseRatePerAction);
-            this.failureCount = this.remainingTurns;
         }
     }
 }
@@ -278,7 +306,7 @@ class Action {
         this.knownFor = action.knownFor;
         this.memorableThreshold = action.memorableThreshold;
         this.isResource = action.isResource;
-        this.resource = new ActionResource(action.resource);
+        this.resources = action.resources.map(r=>new ActionResource(r));
         this.preventAction = {};
     }
 
@@ -312,6 +340,35 @@ class Action {
         else if (this.leveling.decreaseEnabled) {
             this.rate = Math.min(this.leveling.minRate, this.rate - this.leveling.decreaseRate);
         }
+    }
+}
+
+
+
+class StatusEffects {
+    constructor(statusEffects) {
+        // The status effects are enabled
+        this.enabled = statusEffects.enabled;
+        // The effects of the status, this is an array of actions this status effects.
+        this.effects = statusEffects.effects;
+        // The type of status effect, this is a string and should match an action.
+        this.type = statusEffects.type;
+        // The message for the status effect.
+        this.message = statusEffects.message;
+        // The note for the status effect, this is presented to the author's notes.
+        this.note = statusEffects.note;
+        // The value of the status effect.
+        this.value = statusEffects.value;
+        // If the value increases or decreases.
+        this.isBuff = statusEffects.isBuff;
+        // If the status effect is permanent.
+        this.isPermanent = statusEffects.isPermanent;
+        // If the status effect is temporary.
+        this.isTemporary = statusEffects.isTemporary;
+        // The duration of the status effect.
+        this.duration = statusEffects.duration;
+        // The remaining turns of the status effect.
+        this.remainingTurns = statusEffects.remainingTurns;
     }
 }
 
@@ -352,7 +409,7 @@ class Player {
         ].filter(e => e !== "").join(", ").trim()
 
 
-        return status.length > 0 ? `[${this.name} ${getIsOrAre(this.name)}, ${status}.]` : "";
+        return status.length > 0 ? `[${this.name} ${getCopular(this.name)}, ${status}.]` : "";
     }
 
     getReputation() {
@@ -370,21 +427,24 @@ class Player {
         return this.resources.map(r => r.thresholds.find(t => r.value <= t.threshold)).filter(e => e).map(e => e.message);
     }
 
-    setResources(isActiveTurn, action, isSuccess) {
-        if (action.isResource) {
-            const resource = this.resources.find(r => r.type === action.resource.type);
-            if (action.resource.isIncreasing && action.resource.onSuccess && isSuccess) {
-                resource.value = Math.min(resource.max, resource.value + action.resource.modify);
-            }
-            if (!action.resource.isIncreasing && (action.resource.onSuccess && isSuccess)) {
-                resource.value = Math.max(resource.min, resource.value - action.resource.modify);
-            }
-            if (action.resource.isIncreasing && !action.resource.onSuccess && !isSuccess) {
-                resource.value = Math.min(resource.max, resource.value + action.resource.modify);
-            }
-            if (!action.resource.isIncreasing && !action.resource.onSuccess && !isSuccess) {
-                resource.value = Math.max(resource.min, resource.value - action.resource.modify);
-            }
+    setResources(isSuccess, actionName) {
+        const action = this.actions.find(a => a.name.includes(actionName) && a.isResource);
+        if (action) {
+            action.resources.forEach(actionResource => {
+                const resource = this.resources.find(r => r.type === actionResource.type);
+                if (actionResource.isIncreasing && actionResource.onSuccess && isSuccess) {
+                    resource.value = Math.min(resource.max, resource.value + actionResource.modify);
+                }
+                if (!actionResource.isIncreasing && (actionResource.onSuccess && isSuccess)) {
+                    resource.value = Math.max(resource.min, resource.value - actionResource.modify);
+                }
+                if (actionResource.isIncreasing && !actionResource.onSuccess && !isSuccess) {
+                    resource.value = Math.min(resource.max, resource.value + actionResource.modify);
+                }
+                if (!actionResource.isIncreasing && !actionResource.onSuccess && !isSuccess) {
+                    resource.value = Math.max(resource.min, resource.value - actionResource.modify);
+                }
+            });
         }
     }
 }
@@ -427,9 +487,18 @@ class Game {
 // This section can be customized to fit the need of the game.
 // Change the values below to fractions of a whole number to affect the script.
 const defaultActionRate = {
-    starting: .3, // I recommend this be set to .5 for easy and .2 for hard.
+    // I recommend this be set to .5 for easy and .2 for hard.
+    starting: .3,
+    // The maximum starting bonus for an action.
     MaxBonusRate: .2,
-    MinBonusRate: .01
+    // The minimum starting bonus for an action.
+    MinBonusRate: .01,
+    // The max rate for an action.
+    // I do not recommend setting this to above .95.
+    max: .95,
+    // The min rate for an action.
+    // I do not recommend setting this to below .05.
+    min: .05
 }
 
 // Feel free to change the values below to customize the default action but only the text values except for the name default.
@@ -508,8 +577,7 @@ const defaultAction = {
     // Is the action a resource action.
     isResource: false,
     // The resource the action affects.
-    resource: {},
-    preventAction: [],
+    resources: [],
 };
 
 // Feel free to change the values below to customize the default charisma action but only the text values except for the name charisma.
@@ -525,8 +593,8 @@ const defaultCharismaAction = {
     leveling: {
         increaseEnabled: true,
         decreaseEnabled: true,
-        maxRate: .5,
-        minRate: .5,
+        maxRate: defaultActionRate.max,
+        minRate: defaultActionRate.min,
         rateOfChange: 0.01,
         rateOfChangeFailureMultiplier: 10,
         decreaseRate: 0.001 / 6
@@ -542,8 +610,7 @@ const defaultCharismaAction = {
     knownFor: "a skilled linguist",
     memorableThreshold: 3,
     isResource: false,
-    resource: {},
-    preventAction: [],
+    resources: [],
 };
 
 // Custom actions is an array of actions that can be added to the game. Define as many as you like, but make sure to lower the decreaseRate in the leveling object to match the number of actions including the charisma action but not the default action.
@@ -555,14 +622,14 @@ const customActions = [
         name: ["fighting", "combat", "weapon", "hit", "strike", "attack", "counter", "counterattack", "assault", "ambush"],
         successEndings: ["brutal efficiency", "deadly precision", "unyielding determination"],
         failureEndings: ["misjudged", "ineffective", "reckless"],
-        successStart: "the attack is make with ",
+        successStart: "the attack is made with",
         failureStart: "the attack proves",
         coolDownPhrase: "venerable to attack",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
-            increaseEnabled: false,
-            decreaseEnabled: false,
+            increaseEnabled: true,
+            decreaseEnabled: true,
             maxRate: defaultActionRate.max,
             minRate: defaultActionRate.min,
             rateOfChange: 0.01,
@@ -580,26 +647,25 @@ const customActions = [
         knownFor: "a skilled fighter",
         memorableThreshold: 3,
         isResource: true,
-        resource: {
+        resources: [{
             type: "health",
             isIncreasing: false,
             modify: 3,
             onSuccess: false
-        },
-        preventAction: [],
+        }]
     },
     {
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
         successEndings: ["agile", "graceful", "fluid"],
         failureEndings: ["unprepared", "reckless", "awkward"],
-        successStart: "Your movement is successfully and",
-        failureStart: "Your attempt to move was",
+        successStart: "the movement is successfully and",
+        failureStart: "the attempt to move was",
         coolDownPhrase: "barely able to move",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
-            increaseEnabled: false,
-            decreaseEnabled: false,
+            increaseEnabled: true,
+            decreaseEnabled: true,
             maxRate: defaultActionRate.max,
             minRate: defaultActionRate.min,
             rateOfChange: 0.01,
@@ -614,18 +680,17 @@ const customActions = [
             remainingTurns: 0
         },
         memorable: true,
-        knownFor: "a skilled mover",
+        knownFor: "parkour master",
         memorableThreshold: 3,
         isResource: false,
-        resource: {},
-        preventAction: [],
+        resources: [],
     },
     {
         name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
         successEndings: ["perceptive", "attentive", "detailed"],
-        failureEndings: ["overlooked", "distracted", "cursory"],
-        successStart: "You observe carefully and",
-        failureStart: "Despite your efforts to notice details, you are",
+        failureEndings: ["overlooking", "being distracted", "lack of depth"],
+        successStart: "the observation is successful and",
+        failureStart: "failing to notice the details you fail by",
         coolDownPhrase: "unable to focus",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -649,15 +714,14 @@ const customActions = [
         knownFor: "a keen observer",
         memorableThreshold: 3,
         isResource: false,
-        resource: {},
-        preventAction: [],
+        resources: [],
     },
     {
         name: ["performance", "dancing", "singing", "jokes"],
         successEndings: ["perceptive", "engaging", "lively"],
         failureEndings: ["overlooked", "distracted", "bland"],
-        successStart: "The preform performance is ",
-        failureStart: "Despite your efforts, you are",
+        successStart: "the preform performance is",
+        failureStart: "despite the efforts, the performance is",
         coolDownPhrase: "preforming poorly",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -681,15 +745,14 @@ const customActions = [
         knownFor: "a skilled performer",
         memorableThreshold: 3,
         isResource: false,
-        resource: {},
-        preventAction: [],
+        resources: [],
     },
     {
         name: ["first-aid", "medicine", "medical"],
         successEndings: ["life saving", "skillful", "precise"],
         failureEndings: ["misjudged", "ineffective", "reckless"],
-        successStart: "The first-aid",
-        failureStart: "Your first-aid proves",
+        successStart: "the first-aid attempt succeeds and is",
+        failureStart: "the attempt at first-aid proves",
         coolDownPhrase: "are out of first-aid supplies",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -713,13 +776,12 @@ const customActions = [
         knownFor: "a skilled healer",
         memorableThreshold: 3,
         isResource: true,
-        resource: {
+        resources: [{
             type: "health",
             isIncreasing: true,
             modify: 3,
             onSuccess: true
-        },
-        preventAction: [],
+        }]
     }
 ]
 
@@ -765,7 +827,7 @@ const defaultPlayerYou = {
         enabled: false,
         // The threshold for the exhaustion system.
         // This is the number of actions before the system activates.
-        threshold: 5,
+        threshold: 10,
         // The number of inactive turns.
         inactive: 0,
         // The number of active turns.
@@ -778,7 +840,7 @@ const defaultPlayerYou = {
         // Enable the threat system.
         enabled: false,
         // The threshold for the threat system.
-        threshold: 5,
+        threshold: 10,
         // The number of active turns.
         active: 0,
         // The number of inactive turns.
@@ -786,7 +848,7 @@ const defaultPlayerYou = {
         // The outcomes for the threat system when the player is inactive.
         // Add as many as you like but keep one in the array.
         // The system randomly selects one of the outcomes for the player inaction.
-        array: ["A standee noise can he heard.", "There is a strange smell in the air.", "There is sudden silence."],
+        array: ["A strange noise can he heard.", "There is a strange smell in the air.", "There is sudden silence."],
     },
     // The event system for the player.
     // This is used to add random events to the player.
@@ -861,11 +923,11 @@ const defaultGame = {
             // The chance is a fraction of a whole number.
             // The description is the text that is displayed when the event occurs.
             events: [
-                { chance: .05, description: "It is thundering outside." },
-                { chance: .1, description: "There are clouds and precipitation outside." },
-                { chance: .15, description: "There are clouds outside." },
+                { chance: 1, description: "It is clear outside." },
                 { chance: .25, description: "There is a thick fog outside." },
-                { chance: 1, description: "It is clear outside." }
+                { chance: .15, description: "There are clouds outside." },
+                { chance: .1, description: "There are clouds and precipitation outside." },
+                { chance: .05, description: "It is thundering outside." },
             ],
             // The chance of the event system changing events.
             chance: 0.1,
@@ -1248,6 +1310,10 @@ const tester = (state, text, history, storyCards, info) => {
             return [];
         }
 
+        /**
+         * Get a random item from the player threat array.
+         * @returns The random item from the active players threat array.
+         */
         const suddenly = () => {
             if (!activePlayer.threat.enabled) return "";
             const activity = Math.max(activePlayer.threat.active, activePlayer.threat.inactive);
@@ -1269,19 +1335,6 @@ const tester = (state, text, history, storyCards, info) => {
             return status.length > 0 ? status : "";
         }
 
-        // /**
-        //  * Gets the players status for the message.
-        //  * @returns The status.
-        //  */
-        // const getPlayerStatusMessage = (who) => {
-        //     const status = game.players.map(p => p.actions).filter(a => a.coolDown.enabled && a.coolDown.remainingTurns > 0)
-        //         .map(a => `${a.name[0]} is cooling down for ${a.coolDown.remainingTurns} turns. Causing: "${a.coolDownPhrase}"`);
-        //     if (status.length > 0) {
-        //         return status;
-        //     }
-        //     return "";
-        // }
-
         const getResourceThresholds = () => {
             let thresholds = [];
             game.resources.forEach(r => {
@@ -1299,7 +1352,7 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         // Call and modify the front Memory so the information is only exposed to the AI for a single turn.
-        game.eventSystem.forEach(e => e.changeEvent());
+        game.eventSystem.forEach(e => e.changeEvent(Math.random()));
         state.memory.frontMemory = actionParse();
 
         state.memory.authorsNote = [
@@ -1321,4 +1374,4 @@ const tester = (state, text, history, storyCards, info) => {
 
     return { state, text, history, storyCards, info }
 }
-module.exports = { tester, getRandomItem, getNextItem, getIsOrAre, checkWithinBounds, startingActionRate, Game, Player, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions};
+module.exports = { tester, getRandomItem, getNextItem, getCopular, checkWithinBounds, startingActionRate, Game, Player, CoolDown, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions};
