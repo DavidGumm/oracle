@@ -226,7 +226,7 @@ class CoolDown {
     /**
      * Increases the cool down.
      */
-    increase() {
+    /*increase() {
         if (this.enabled) {
             
             //If action is already cooling down
@@ -248,6 +248,26 @@ class CoolDown {
     decrease() {
         if (this.enabled) {
             this.remainingTurns = Math.max(0, this.remainingTurns - this.decreaseRatePerAction);
+        }
+    }*/
+    
+    /**
+     * Increases the cool down.
+     */
+    increase() {
+        if (this.enabled) {
+            this.failureCount = Math.min(this.failureThreshold, this.failureCount + 1);
+            if (this.failureCount >= this.failureThreshold) {
+                this.remainingTurns = this.failureThreshold;
+            }
+        }
+    }
+    /**
+     * Decreases the cool down.
+     */
+    decrease() {
+        if (this.enabled) {
+            this.failureCount = Math.max(0, this.failureCount - this.decreaseRatePerAction);
         }
     }
 }
