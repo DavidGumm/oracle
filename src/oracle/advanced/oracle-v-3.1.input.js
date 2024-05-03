@@ -35,14 +35,14 @@ const getNextItem = (arr, currentIndex) => {
 /**
  * Accounts for both an upper and lower bound
  *
- * @param {number} number number to check
- * @param {number} lowerBound
- * @param {number} upperBound
+ * @param {Number} number number to check
+ * @param {Number} lowerBound
+ * @param {Number} upperBound
  * @returns Adjusted number
  *  ----------------------------------
  * Accounts for only a lower bound
- * @param {number} number number to check
- * @param {number} lowerBound
+ * @param {Number} number number to check
+ * @param {Number} lowerBound
  * @returns Adjusted number
  */
 const checkWithinBounds = (number, lowerBound, upperBound) => {
@@ -82,9 +82,9 @@ const getCopular = (who) => {
 
 /**
  * The starting action rates.
- * @param {number} starting The minimum value for an action.
- * @param {number} MaxBonusRate The max starting bonus rate.
- * @param {number} MinBonusRate The min starting bonus rate.
+ * @param {Number} starting The minimum value for an action.
+ * @param {Number} MaxBonusRate The max starting bonus rate.
+ * @param {Number} MinBonusRate The min starting bonus rate.
  */
 class ActionRate {
     constructor(actionRate) {
@@ -96,8 +96,8 @@ class ActionRate {
 
 /**
  * The event for the event system.
- * @param {number} chance The chance this can be the event
- * @param {string} description The description of the event to be presented to the AI
+ * @param {Number} chance The chance this can be the event
+ * @param {String} description The description of the event to be presented to the AI
  */
 class EventType {
     constructor(eventType) {
@@ -114,12 +114,12 @@ class EventSystem {
     /**
      * Represents a constructor for the event system.
      * @param {Object} eventSystem - The event system object.
-     * @param {string} eventSystem.name - The name of the event system.
+     * @param {String} eventSystem.name - The name of the event system.
      * @param {Array} eventSystem.events - The events associated with the event system.
-     * @param {number} eventSystem.chance - The chance of an event changing.
-     * @param {number} eventSystem.current - The current event.
-     * @param {string} eventSystem.description - The description of the event system.
-     * @param {boolean} eventSystem.isRandom - Indicates if events are chosen randomly or in sequence.
+     * @param {Number} eventSystem.chance - The chance of an event changing.
+     * @param {Number} eventSystem.current - The current event.
+     * @param {String} eventSystem.description - The description of the event system.
+     * @param {Boolean} eventSystem.isRandom - Indicates if events are chosen randomly or in sequence.
      */
     constructor(eventSystem) {
         this.name = eventSystem.name;
@@ -151,11 +151,11 @@ class EventSystem {
 
 /**
  * The player exhaustion tracking system.
- * @param {boolean} enabled If the system is active and in use.
- * @param {number} threshold The threshold at which the system activates.
- * @param {number} inactive Turns of inactivity.
- * @param {number} active Turns of activity.
- * @param {string} message The message to display when exhausted.
+ * @param {Boolean} enabled If the system is active and in use.
+ * @param {Number} threshold The threshold at which the system activates.
+ * @param {Number} inactive Turns of inactivity.
+ * @param {Number} active Turns of activity.
+ * @param {String} message The message to display when exhausted.
  */
 class Exhaustion {
     constructor(exhaustion) {
@@ -169,11 +169,11 @@ class Exhaustion {
 
 /**
  * The threat system for use durning 'low' player activity. The system system is activated off a lack of player action over time.
- * @param {boolean} enabled Enabled the player activity threat system
- * @param {number} threshold The threshold to drop below before activating
- * @param {number} active The current count of active turns
- * @param {number} inactive The current count of inactive turns
- * @param {string[]} array The outcomes you might encounter for player inaction
+ * @param {Boolean} enabled Enabled the player activity threat system
+ * @param {Number} threshold The threshold to drop below before activating
+ * @param {Number} active The current count of active turns
+ * @param {Number} inactive The current count of inactive turns
+ * @param {String[]} array The outcomes you might encounter for player inaction
  */
 class Threat {
     constructor(threat) {
@@ -187,13 +187,13 @@ class Threat {
 
 /**
  * The leveling information for an action.
- * @param {boolean} increaseEnabled Allow action increase
- * @param {boolean} decreaseEnabled Allow action decrease
- * @param {number} maxRate The actions maximum rate
- * @param {number} minRate The actions minimum rate
- * @param {number} rateOfChange The base rate of action change
- * @param {number} rateOfChangeFailureMultiplier The experience failure multiplier
- * @param {number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+ * @param {Boolean} increaseEnabled Allow action increase
+ * @param {Boolean} decreaseEnabled Allow action decrease
+ * @param {Number} maxRate The actions maximum rate
+ * @param {Number} minRate The actions minimum rate
+ * @param {Number} rateOfChange The base rate of action change
+ * @param {Number} rateOfChangeFailureMultiplier The experience failure multiplier
+ * @param {Number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
  */
 class Leveling {
     constructor(leveling) {
@@ -209,11 +209,11 @@ class Leveling {
 
 /**
  * The actions cool down subsystem.
- * @param {boolean} enabled Enables the action cool down system
- * @param {number} decreaseRatePerAction How quick the cool down rate goes down per player turn
- * @param {number} failureThreshold The failure threshold for when to cool down actions
- * @param {number} failureCount The current count
- * @param {number} remainingTurns The remaining number of turns an action is cooling down
+ * @param {Boolean} enabled Enables the action cool down system
+ * @param {Number} decreaseRatePerAction How quick the cool down rate goes down per player turn
+ * @param {Number} failureThreshold The failure threshold for when to cool down actions
+ * @param {Number} failureCount The current count
+ * @param {Number} remainingTurns The remaining number of turns an action is cooling down
  */
 class CoolDown {
     constructor(coolDown) {
@@ -223,33 +223,6 @@ class CoolDown {
         this.failureCount = coolDown.failureCount;
         this.remainingTurns = coolDown.remainingTurns;
     }
-    /**
-     * Increases the cool down.
-     */
-    /*increase() {
-        if (this.enabled) {
-
-            //If action is already cooling down
-            if (this.remainingTurns > 0) {
-                this.remainingTurns = Math.max(this.failureThreshold, this.remainingTurns + 1);
-            }
-            //If action is not cooling down
-            else {
-
-                this.failureCount++;
-
-                //Check if the failure count has crossed the threshold
-                if (this.failureCount >= this.failureThreshold) {
-                    this.remainingTurns = this.failureThreshold;
-                }
-            }
-        }
-    }
-    decrease() {
-        if (this.enabled) {
-            this.remainingTurns = Math.max(0, this.remainingTurns - this.decreaseRatePerAction);
-        }
-    }*/
 
     /**
      * Increases the cool down.
@@ -1005,6 +978,38 @@ const tester = (state, text, history, storyCards, info) => {
             return game.players.find(p => p.name === name) || game.players[0];
         }
 
+        const getActionByName = name => {
+            if (game.dynamicActions && name !== "default" && name !== "charisma" && name !== "") {
+                let action = activePlayer.actions.find(a => a.name.includes(name.toLowerCase()));
+                if (!action) {
+                    // If skill does not exist, create it with default attributes.
+                    let names = [];
+                    names.push(name.toLowerCase());
+                    activePlayerName = name;
+                    action = new Action(names);
+                    activePlayer.actions.push(action); // Add the new action to the actions array
+                }
+                return action;
+            }
+            return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
+        }
+
+        /**
+         * Determine success or failure of a action
+         * @param {Action} action The action to check.
+         * @returns {boolean} The success or failure of the action check.
+         */
+        const determineFate = (action) => {
+            //Check if the action is disabled
+            if (Object.values(action.preventAction).includes(true) || Object.values(activePlayer).includes(true)) {
+                return false;
+            }
+            const success = Math.random() < action.rate;
+            const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
+            game.messages = [message];
+            return success;
+        }
+
         const delphicBase = () => {
             // Set the default game state
             if (!state.game) {
@@ -1027,38 +1032,6 @@ const tester = (state, text, history, storyCards, info) => {
         const isSpeechAction = actionMatch ? actionMatch[4] !== undefined : null;
 
         const activePlayer = getPlayerByName(activePlayerName);
-
-        const getActionByName = name => {
-            if (game.dynamicActions && name !== "default" && name !== "charisma" && name !== "") {
-                let action = activePlayer.actions.find(a => a.name.includes(name.toLowerCase()));
-                if (!action) {
-                    // If skill does not exist, create it with default attributes.
-                    let names = [];
-                    names.push(name.toLowerCase());
-                    activePlayerName = name;
-                    action = new Action(names);
-                    activePlayer.actions.push(action); // Add the new action to the actions array
-                }
-                return action;
-            }
-            return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
-        }
-
-        /**
-         * Determine success or failure of a action
-         * @param {action} action The action to check.
-         * @returns {boolean} The success or failure of the action check.
-         */
-        const determineFate = (action) => {
-            //Check if the action is disabled
-            if (Object.values(action.preventAction).includes(true) || Object.values(activePlayer).includes(true)) {
-                return false;
-            }
-            const success = Math.random() < action.rate;
-            const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
-            game.messages = [message];
-            return success;
-        }
 
 
         //++++++++++++++++++++++++
@@ -1094,7 +1067,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         /**
          * Logic for handling the player exhaustion.
-         * @param {boolean} active If the player turn is an active one.
+         * @param {Boolean} active If the player turn is an active one.
          */
         const processPlayerActivity = (isActiveTurn) => {
             if (isActiveTurn) {
@@ -1120,8 +1093,8 @@ const tester = (state, text, history, storyCards, info) => {
 
         /**
          * Process all the actions providing an update to each non active action.
-         * @param {boolean} isActiveTurn If the turn is active
-         * @param {action} action The action being used actively
+         * @param {Boolean} isActiveTurn If the turn is active
+         * @param {Action} action The action being used actively
          */
         const processActionsCoolDown = (isActiveTurn, activeAction, isSuccess) => {
             game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
@@ -1171,7 +1144,6 @@ const tester = (state, text, history, storyCards, info) => {
         // Player Reputation
         // ++++++++++++++++++++++++++++++++++++++++
 
-
         const processReputation = (isActiveTurn, action, isSuccess) => {
             if (action) {
                 if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
@@ -1186,8 +1158,6 @@ const tester = (state, text, history, storyCards, info) => {
         // ++++++++++++++++++++++++++++++++++++++++
         // Update Player Resources
         // ++++++++++++++++++++++++++++++++++++++++
-
-
 
         const setPlayerResources = (isActiveTurn, action, isSuccess) => {
             if (action) {
@@ -1221,9 +1191,9 @@ const tester = (state, text, history, storyCards, info) => {
 
         /**
          * Handles the processing for game modules.
-         * @param {*} isActiveTurn If the turn is active.
-         * @param {*} action The action being used actively.
-         * @param {*} isSuccess If the action was a success.
+         * @param {Boolean} isActiveTurn If the turn is active.
+         * @param {Action} action The action being used actively.
+         * @param {Boolean} isSuccess If the action was a success.
          */
         const callModuleProcessing = (isActiveTurn, action, isSuccess) => {
             moduleProcessingGeneral.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
@@ -1232,7 +1202,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         /**
          * The action command parse for use as command parse and entry point.
-         * @param {string} text The user imputed text.
+         * @param {String} text The user imputed text.
          */
         const actionParse = () => {
             let isActiveTurn;
@@ -1257,8 +1227,9 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         /**
-         * Get currently active events.
-        */
+         * Get a random item from an array.
+         * @returns The event system.
+         */
         const getEventSystem = () => {
             if (game.eventSystemEnabled) {
                 return game.eventSystem.map(e => e.description);
@@ -1291,6 +1262,10 @@ const tester = (state, text, history, storyCards, info) => {
             return status.length > 0 ? status : "";
         }
 
+        /**
+         * Get the resource thresholds.
+         * @returns The resource thresholds.
+         */
         const getResourceThresholds = () => {
             let thresholds = [];
             game.resources.forEach(r => {
