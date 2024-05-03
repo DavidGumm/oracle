@@ -818,7 +818,7 @@ const defaultPlayerYou = {
     // The exhaustion system for the player.
     exhaustion: {
         // Enable the exhaustion system.
-        enabled: false,
+        enabled: true,
         // The threshold for the exhaustion system.
         // This is the number of actions before the system activates.
         threshold: 10,
@@ -832,13 +832,13 @@ const defaultPlayerYou = {
     // The threat system for the player.
     threat: {
         // Enable the threat system.
-        enabled: false,
+        enabled: true,
         // The threshold for the threat system.
         threshold: 10,
         // The number of active turns.
         active: 0,
         // The number of inactive turns.
-        inactive: 0,
+        inactive: 11,
         // The outcomes for the threat system when the player is inactive.
         // Add as many as you like but keep one in the array.
         // The system randomly selects one of the outcomes for the player inaction.
@@ -881,8 +881,9 @@ const defaultPlayerYou = {
             // The thresholds are checked in order from top to bottom.
             // The threshold number should be between the min and max values of the resource.
             thresholds: [
-                { threshold: 1, message: "critically injured" },
-                { threshold: 4, message: "injured" },
+                { threshold: 0, message: "dead" },
+                { threshold: 3, message: "critically injured" },
+                { threshold: 5, message: "injured" },
                 { threshold: 7, message: "slightly injured" },
                 { threshold: Infinity, message: "in good health" },
             ],
@@ -1242,13 +1243,8 @@ const tester = (state, text, history, storyCards, info) => {
          * @returns The random item from the active players threat array.
          */
         const suddenly = () => {
-            if (!activePlayer.threat.enabled) return "";
-            const activity = Math.max(activePlayer.threat.active, activePlayer.threat.inactive);
-            if (activity < activePlayer.threat.threshold) {
-                // add to authors notes
-                return getRandomItem(activePlayer.threat.array);
-            }
-            return "";
+            if (!activePlayer.threat.enabled && !(activePlayer.threat.inactive > activePlayer.threat.threshold)) return "";
+            return getRandomItem(activePlayer.threat.array);
         }
 
         /**
@@ -1256,10 +1252,8 @@ const tester = (state, text, history, storyCards, info) => {
          * @returns The status.
          */
         const getPlayersStatus = () => {
-            const status = [...game.players.map(p => p.getStatus())].filter(e => e !== "")
-                .join(" ")
-                .trim();
-            return status.length > 0 ? status : "";
+            const status = [...game.players.map(p => p.getStatus())].filter(e => e !== "");
+            return status;
         }
 
         /**
@@ -1287,7 +1281,7 @@ const tester = (state, text, history, storyCards, info) => {
         state.memory.frontMemory = actionParse();
 
         state.memory.authorsNote = [
-            getPlayersStatus(),
+            ...getPlayersStatus(),
             suddenly(),
             ...getEventSystem(),
             ...getResourceThresholds(),
