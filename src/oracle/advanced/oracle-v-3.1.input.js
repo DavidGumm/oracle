@@ -120,7 +120,7 @@ const formatGrammar = (playerName, stringToFormat) => {
 
     }
 
-    return stringToFormat.replace(/(?:^|(?:[:.!?]\s))(.{1})/g, char => char.toUpperCase());
+    return stringToFormat.replace(/(?:^|(?:[:.!?]\s))(.{1})/g, char => char.toUpperCase()).trim();
 }
 
 
@@ -1004,7 +1004,7 @@ const defaultGame = {
     // Enable the event systems.
     eventSystemEnabled: true,
     // The default author's note for the game.
-    authorsNote: "Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining.",
+    authorsNote: "Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action-packed, lively interactions, visual. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining.",
     // The players in the game.
     players: [defaultPlayerYou],
     // Enable dynamically added players.
@@ -1060,7 +1060,7 @@ const tester = (state, text, history, storyCards, info) => {
                     //Format all grammatical placeholders in the new action
                     formatGrammar(player.name, action.successStart);
                     formatGrammar(player.name, action.failureStart);
-                    fornatGrannar(player.name, action.coolDownPhrase);
+                    formatGrammar(player.name, action.coolDownPhrase);
                     action.successEndings.forEach(currPhrase => currPhrase = formatGrammar(player.name, currPhrase))
                 }
                 return action;
