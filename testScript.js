@@ -49,7 +49,7 @@ const formatGrammar = (playerName, stringToFormat) => {
 
     return stringToFormat.replace(/(?:^|(?:[.!?]\s))(.{1})/g, char => char.toUpperCase());
 }
-playerName = "Timothy";
+playerName = "I";
 str = "Once upon a time {Bob} existed as a {bob}. {bob} is a rumor, a cosmic mystery. {Bob} had many talents, like world domination. {they} tried on many occasions to not take over the world, but {Bob} {is} just too good at it.";
 
 console.log(formatGrammar(playerName, str));

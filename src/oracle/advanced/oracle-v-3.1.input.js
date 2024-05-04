@@ -94,7 +94,7 @@ const formatGrammar = (playerName, stringToFormat) => {
 
         case "I":
             //First Person
-            stringToFormat = stringToFormat.replace(/{pythia}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{pythia}/g, 'I');
             stringToFormat = stringToFormat.replace(/{pythia's}/g, 'my');
             stringToFormat = stringToFormat.replace(/{is}/g, 'am');
             stringToFormat = stringToFormat.replace(/{are}/g, 'am');
@@ -637,8 +637,8 @@ const defaultAction = {
 // Feel free to change the values below to customize the default charisma action but only the text values except for the name charisma.
 const defaultCharismaAction = {
     name: ["charisma", "speech", "diplomacy", "words", "speak", "converse", "influence", "charm", "convene", "convince", "coax", "reason", "persuade", "persuasion", "encourage", "encouragement", "win over", "assure", "reassure", "reassurance", "comfort", "intimidate"],
-    successEndings: ["persuasive", "charming", "full of conviction"],
-    failureEndings: ["awkward", "unconvincing", "ineffectual"],
+    successEndings: ["persuasive.", "charming.", "full of conviction."],
+    failureEndings: ["awkward.", "unconvincing.", "ineffectual."],
     successStart: "{Pythia's} words were",
     failureStart: "{Pythia's} words were",
     coolDownPhrase: "{Pythia's} charisma isn't working",
