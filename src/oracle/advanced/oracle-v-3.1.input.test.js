@@ -23,10 +23,6 @@ const info = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-const frontMemoryFightMatch = /(Success|Fail)! (You|Your) (attacked|attempt to attack) (with brutal efficiency!|with deadly precision!|with unyielding determination!|was sloppy.|was ineffective.|was reckless.)/;
-const frontMemoryMoveMatch = /(Success|Fail)! Your( movement| attempt to move) (was graceful!|was fluid!|was agile!|was pitiful\.|was reckless\.|was awkward\.)/;
-const frontMemorySpeechMatch = /(Success|Fail)! Your words were (persuasive|charming|full of conviction|awkward|unconvincing|ineffectual)\./;
-const frontMemoryDefaultMatch = /(Success|Fail)! Your action (was masterful\.|was executed perfectly\.|couldn't have gone better!|was futile.|was clumsy.|was inept.)/;
 
 test("Test Player Class", () => {
     expect(state.game.players[0].name).toBe("You");
@@ -110,6 +106,10 @@ test("Test Change Event", () => {
     });
 });
 
+const frontMemoryFightMatch = /(Success|Fail)! (You|Your) (attacked|attempt to attack) (with brutal efficiency!|with deadly precision!|with unyielding determination!|was sloppy.|was ineffective.|was reckless.)/;
+const frontMemoryMoveMatch = /(Success|Fail)! Your( movement| attempt to move) (was graceful!|was fluid!|was agile!|was pitiful\.|was reckless\.|was awkward\.)/;
+const frontMemorySpeechMatch = /(Success|Fail)! Your words were (persuasive|charming|full of conviction|awkward|unconvincing|ineffectual)\./;
+const frontMemoryDefaultMatch = /(Success|Fail)! Your action (was masterful\.|was executed perfectly\.|couldn't have gone better!|was futile.|was clumsy.|was inept.)/;
 test("Test Fighting action", () => {
     const text = "> You try to use fighting to defend yourself.";
     const results = tester(state, text, history, storyCards, info);
