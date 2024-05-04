@@ -93,26 +93,26 @@ const formatGrammar = (playerName, stringToFormat) => {
     switch (playerName) {
         case "You":
 
-            stringToFormat.replaceAll('{playerName}', playerName);
-            stringToFormat.replaceAll('{playerPossessive}', 'your');
-            stringToFormat.replaceAll('{playerCopular}', 'are');
-            return stringToFormat;
+            stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'your');
+            stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'are');
+
 
         case "I":
 
-        stringToFormat.replaceAll('{playerName}', playerName);
-        stringToFormat.replaceAll('{playerPossessive}', 'my');
-        stringToFormat.replaceAll('{playerCopular}', playerName);
-        return stringToFormat;
-
+            stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'my');
+            stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'am');
+        
 
         default:
 
-        stringToFormat.replaceAll('{playerName}', playerName);
-        stringToFormat.replaceAll('{playerPossessive}', 'their');
-        stringToFormat.replaceAll('{playerCopular}', 'is');
-        return stringToFormat;
+            stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'their');
+            stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'is');
     }
+
+    return stringToFormat.replace(/(?:^|(?:[.!?]\s))(\w{1})/g, char => char.toUpperCase());
 }
 
 
