@@ -83,6 +83,41 @@ const getCopular = (who) => {
 }
 
 /**
+ * Replaces placeholder values to ensure proper grammar
+ * Placeholders:
+ * @param {*} playerName 
+ * @param {*} stringToFormat 
+ * @returns 
+ */
+const formatGrammar = (playerName, stringToFormat) => {
+    switch (playerName) {
+        case "You":
+
+            stringToFormat.replaceAll('{playerName}', playerName);
+            stringToFormat.replaceAll('{playerPossessive}', 'your');
+            stringToFormat.replaceAll('{playerCopular}', 'are');
+            return stringToFormat;
+
+        case "I":
+
+        stringToFormat.replaceAll('{playerName}', playerName);
+        stringToFormat.replaceAll('{playerPossessive}', 'my');
+        stringToFormat.replaceAll('{playerCopular}', playerName);
+        return stringToFormat;
+
+
+        default:
+
+        stringToFormat.replaceAll('{playerName}', playerName);
+        stringToFormat.replaceAll('{playerPossessive}', 'their');
+        stringToFormat.replaceAll('{playerCopular}', 'is');
+        return stringToFormat;
+    }
+}
+
+
+
+/**
  * The starting action rates.
  * @param {Number} starting The minimum value for an action.
  * @param {Number} MaxBonusRate The max starting bonus rate.
@@ -1256,16 +1291,6 @@ const tester = (state, text, history, storyCards, info) => {
         // ++++++++++++++++++++++++++++++++++++++++
         // ++++++++++++++++++++++++++++++++++++++++
 
-        /**
-         * Handles the processing for game modules.
-         * @param {Boolean} isActiveTurn If the turn is active.
-         * @param {Action} action The action being used actively.
-         * @param {Boolean} isSuccess If the action was a success.
-         */
-        const callModuleProcessing = (isActiveTurn, action, isSuccess) => {
-            moduleProcessingGeneral.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
-            moduleProcessingLast.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
-        }
 
         /**
          * The action command parse for use as command parse and entry point.
