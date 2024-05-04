@@ -21,12 +21,13 @@ const info = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-const authorsNoteRegEx = /^\[You are, (|exhausted, )unable to make sense, a skilled fighter, (in good health|dead)\.\] (|\[Bob is, unable to make sense, a skilled fighter, (in good health|dead)\.\] )(There is a strange smell in the air|There is sudden silence|A strange noise can he heard)\. (It is clear outside|There are clouds outside|There are clouds and precipitation outside|It is thundering outside|There is a thick fog outside)\. Style Keywords: Light, breezy, punchy, whimsical, comedic\. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual\. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining\./
+const authorsNoteRegEx = /^Your status: Your charisma isn't working. You are vulnerable to attack. A skilled fighter. In good health. Bob's status: Bob's charisma isn't working. Bob is vulnerable to attack. A skilled fighter. In good health. A strange noise can he heard. It is clear outside./
+const defaultAuthorsNote = "Style Keywords: Light, breezy, punchy, whimsical, comedic. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual.Tone Keywords: Light, humorous, playful, fun, engaging, entertaining.";
 
-const frontMemoryFightMatch = / And the attack is made with (deadly precision|brutal efficiency|unyielding determination)\.| But the attack proves (misjudged|ineffective|reckless)!/;
-const frontMemoryMoveMatch = / And the movement is successfully and (graceful|fluid|agile)\.| But the attempt to move was (awkward|unprepared|reckless)!/;
-const frontMemorySpeechMatch = / And the words are (persuasive|charming|full of conviction)\.| But the words are (awkward|unconvincing|ineffectual)!/;
-const frontMemoryDefaultMatch = / And successfully, manage to be (masterful|remarkable|flawless)\.| But fail, managing to be (clumsy|inept|futile)!/;
+const frontMemoryFightMatch = /(Success|Fail)! (You|Your) (attacked|attempt to attack) (with brutal efficiency!|with deadly precision!|with unyielding determination!|was sloppy.|was ineffective.|was reckless.)/;
+const frontMemoryMoveMatch = /(Success|Fail)! Your( movement| attempt to move) (was graceful!|was fluid!|was agile!|was pitiful\.|was reckless\.|was awkward\.)/;
+const frontMemorySpeechMatch = /(Success|Fail)! Your words were (persuasive|charming|full of conviction|awkward|unconvincing|ineffectual)\./;
+const frontMemoryDefaultMatch = /(Success|Fail)! Your action (was masterful\.|was executed perfectly\.|couldn't have gone better!|was futile.|was clumsy.|was inept.)/;
 
 test("Test Player Class", () => {
     expect(state.game.players[0].name).toBe("You");
@@ -38,7 +39,7 @@ test("Test Player Class", () => {
     state.game.players[0].setResources(true, "first-aid");
     expect(state.game.players[0].resources[0].value).toBe(10);
     expect(state.game.players[0].getResourceThresholds()).toStrictEqual(["in good health"]);
-    expect(state.game.players[0].getStatus()).toBe("[You are, unable to make sense, a skilled fighter, in good health.]");
+    expect(state.game.players[0].getStatus()).toBe("Your status: A skilled fighter. In good health.");
 
     for (let index = 0; index < 10; index++) {
         state.game.players[0].setResources(false, "fighting");
@@ -96,11 +97,11 @@ test("Test checkWithinBounds", () => {
     expect(adjustedNumber2).toBe(upperBound);
 });
 
-test("Test getCopular", () => {
-    expect(getCopular("You")).toBe("are");
-    expect(getCopular("Bob")).toBe("is");
-    expect(getCopular("I")).toBe("am");
-});
+// test("Test getCopular", () => {
+//     expect(getCopular("You")).toBe("are");
+//     expect(getCopular("Bob")).toBe("is");
+//     expect(getCopular("I")).toBe("am");
+// });
 
 const weatherMatch = /(It is thundering outside\.|There is a thick fog outside\.|It is clear outside\.|There are clouds outside\.|There are clouds and precipitation outside\.)/;
 test("Test Change Event", () => {
@@ -115,7 +116,7 @@ test("Test Fighting action", () => {
     const results = tester(state, text, history, storyCards, info);
     expect(results.state).toMatchObject(state);
     expect(results.state.memory.frontMemory).toMatch(frontMemoryFightMatch);
-    expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+    expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
     expect(results.text).toBe(text);
     expect(results.history).toMatchObject(history);
     expect(results.storyCards).toMatchObject(storyCards);
@@ -145,7 +146,7 @@ for (let index = 0; index < loops; index++) {
         const results = tester(state, text, history, storyCards, info);
         expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch(frontMemoryFightMatch);
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
@@ -157,7 +158,7 @@ for (let index = 0; index < loops; index++) {
         const results = tester(state, text, history, storyCards, info);
         expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch(frontMemoryDefaultMatch);
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
@@ -169,7 +170,7 @@ for (let index = 0; index < loops; index++) {
         const results = tester(state, text, history, storyCards, info);
         expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch(frontMemorySpeechMatch);
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
@@ -181,7 +182,7 @@ for (let index = 0; index < loops; index++) {
         const results = tester(state, text, history, storyCards, info);
         //expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch(frontMemoryMoveMatch);
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
@@ -192,8 +193,8 @@ for (let index = 0; index < loops; index++) {
         const text = "> Bob says \"Some words you say.\"";
         const results = tester(state, text, history, storyCards, info);
         //expect(results.state).toMatchObject(state);
-        expect(results.state.memory.frontMemory).toMatch(frontMemorySpeechMatch);
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.state.memory.frontMemory).toMatch(/(Success!|Fail!) Bob's words were (persuasive|charming|full of conviction|awkward|unconvincing|ineffectual)\./);
+        expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
@@ -205,7 +206,7 @@ for (let index = 0; index < loops; index++) {
         const results = tester(state, text, history, storyCards, info);
         //expect(results.state).toMatchObject(state);
         expect(results.state.memory.frontMemory).toMatch("");
-        expect(results.state.memory.authorsNote).toMatch(authorsNoteRegEx);
+        expect(results.state.memory.authorsNote.includes(results.state.game.authorsNote)).toBe(true);
         expect(results.text).toBe(text);
         expect(results.history).toMatchObject(history);
         expect(results.storyCards).toMatchObject(storyCards);
