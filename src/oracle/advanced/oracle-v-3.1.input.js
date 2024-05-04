@@ -79,33 +79,36 @@ const formatGrammar = (playerName, stringToFormat) => {
     switch (playerName) {
         case "You":
             //Second Person
-            stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
-            stringToFormat = stringToFormat.replace(/{playerNamePossessive}/g, 'your');
-            stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'your');
-            stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'are');
-            stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'you');
-            stringToFormat = stringToFormat.replace(/{playerReferToSelf}/g, 'yourself');
+            stringToFormat = stringToFormat.replace(/{player}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{player's}/g, 'your');
+            stringToFormat = stringToFormat.replace(/{their}/g, 'your');
+            stringToFormat = stringToFormat.replace(/{is}/g, 'are');
+            stringToFormat = stringToFormat.replace(/{are}/g, 'are');
+            stringToFormat = stringToFormat.replace(/{they}/g, 'you');
+            stringToFormat = stringToFormat.replace(/{themself}/g, 'yourself');
 
 
         case "I":
             //First Person
-            stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
-            stringToFormat = stringToFormat.replace(/{playerNamePossessive}/g, 'my');
-            stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'my');
-            stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'am');
-            stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'I');
-            stringToFormat = stringToFormat.replace(/{playerReferToSelf}/g, 'myself');
+            stringToFormat = stringToFormat.replace(/{player}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{player's}/g, 'my');
+            stringToFormat = stringToFormat.replace(/{their}/g, 'my');
+            stringToFormat = stringToFormat.replace(/{is}/g, 'am');
+            stringToFormat = stringToFormat.replace(/{are}/g, 'am');
+            stringToFormat = stringToFormat.replace(/{they}/g, 'I');
+            stringToFormat = stringToFormat.replace(/{themself}/g, 'myself');
 
         
 
         default:
             //Third person
-            stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
-            stringToFormat = stringToFormat.replace(/{playerNamePossessive}/g, `${playerName}'s`);
-            stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'their');
-            stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'is');
-            stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'they');
-            stringToFormat = stringToFormat.replace(/{playerReferToSelf}/g, 'themself');
+            stringToFormat = stringToFormat.replace(/{player}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{player's}/g, `${playerName}'s`);
+            stringToFormat = stringToFormat.replace(/{their}/g, 'their');
+            stringToFormat = stringToFormat.replace(/{is}/g, 'is');
+            stringToFormat = stringToFormat.replace(/{are}/g, 'are');
+            stringToFormat = stringToFormat.replace(/{they}/g, 'they');
+            stringToFormat = stringToFormat.replace(/{themself}/g, 'themself');
 
     }
 
@@ -444,11 +447,11 @@ class Player {
             let statusMessage;
             //Third person status
             if (this.name !== "You" && this.name !== "I") {
-                statusMessage = `{playerName}'s Status: ${status}`;
+                statusMessage = `{player}'s Status: ${status}`;
             }
             //First or Second person status
             else {
-                statusMessage = `{playerPossessive} Status: ${status}`;
+                statusMessage = `{their} Status: ${status}`;
             }
             return formatGrammar(this.name, statusMessage);
         }
@@ -560,14 +563,14 @@ const defaultAction = {
     // The message is combined with the success ending to form the full message.
     // Example: "You try to move the rock. and You successfully, manage to be masterful."
     // Example: "Bob tries to move the rock. and Bob successfully, manage to be masterful."
-    successStart: "{playerPossessive} action",
+    successStart: "{their} action",
     // The start of the failure message as seen by the AI.
     // The message is combined with the failure ending to form the full message.
     // Example: "You try to move the rock. and You failing, it ends up being clumsy."
     // Example: "Bob tries to move the rock. and Bob failing, it ends up being futile."
-    failureStart: "{playerPossessive} action was",
+    failureStart: "{their} action was",
     // The message to display when the action is on cool down.
-    coolDownPhrase: "{playerName} {playerCopular} unable to act",
+    coolDownPhrase: "{player} {is} unable to act",
     // The note for the action, that are added to author notes for special actions.
     // This is a good place to add special rules for the action.
     note: "",
@@ -632,7 +635,7 @@ const defaultCharismaAction = {
     failureEndings: ["awkward", "unconvincing", "ineffectual"],
     successStart: "the words are",
     failureStart: "the words are",
-    coolDownPhrase: "{playerPossessive} charisma isn't working",
+    coolDownPhrase: "{their} charisma isn't working",
     note: "",
     rate: .5,
     leveling: {
@@ -668,9 +671,9 @@ const customActions = [
         name: ["fighting", "combat", "weapon", "hit", "strike", "attack", "counter", "counterattack", "assault", "ambush"],
         successEndings: ["with brutal efficiency!", "with deadly precision!", "with unyielding determination!"],
         failureEndings: ["was sloppy.", "was ineffective.", "was reckless."],
-        successStart: "{playerName} attacks",
-        failureStart: "{playerNamePossessive} attempt to attack",
-        coolDownPhrase: "{playerName} {playerCopular} vulnerable to attack",
+        successStart: "{player} attacks",
+        failureStart: "{player's} attempt to attack",
+        coolDownPhrase: "{player} {is} vulnerable to attack",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -705,9 +708,9 @@ const customActions = [
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
         successEndings: ["is agile!", "is graceful!", "is fluid!"],
         failureEndings: ["was pitiful.", "was reckless.", "was awkward."],
-        successStart: "{playerNamePossessive} movement",
-        failureStart: "{playerNamePossessive} attempt to move",
-        coolDownPhrase: "{playerName} {playerCopular} too tired to move",
+        successStart: "{player's} movement",
+        failureStart: "{player's} attempt to move",
+        coolDownPhrase: "{player} {is} too tired to move",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -736,10 +739,10 @@ const customActions = [
     {
         name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
         successEndings: ["perceptive", "attentive", "detailed"],
-        failureEndings: ["but couldn't make out many details", "but lost focus", "but {playerReferTo} weren't very thorough"],
+        failureEndings: ["but couldn't make out many details", "but lost focus", "but {they} weren't very thorough"],
         successStart: "The observation",
-        failureStart: "{playerReferTo} tried to pay attention,",
-        coolDownPhrase: "{playerName} cannot focus on {playerPossessive} surroundings",
+        failureStart: "{they} tried to pay attention,",
+        coolDownPhrase: "{player} cannot focus on {their} surroundings",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -769,9 +772,9 @@ const customActions = [
         name: ["performance", "dancing", "singing", "jokes"],
         successEndings: ["draws attention", "is captivating", "is lively"],
         failureEndings: ["is overlooked", "annoys the crowd", "is bland"],
-        successStart: "{playerPossessive} performance",
-        failureStart: "Despite {playerPossessive} efforts, {playerPossessive} performance",
-        coolDownPhrase: "{playerName} can't bring {playerReferToSelf} to perform",
+        successStart: "{their} performance",
+        failureStart: "Despite {their} efforts, {their} performance",
+        coolDownPhrase: "{player} can't bring {themself} to perform",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -802,8 +805,8 @@ const customActions = [
         successEndings: ["life saving", "skillful", "precise"],
         failureEndings: ["is ineffective", "doesn't help much", "is reckless"],
         successStart: "the first-aid attempt succeeds and is",
-        failureStart: "{playerPossessive} attempt at first-aid",
-        coolDownPhrase: "{playerReferTo} {playerCopular} out of first-aid supplies",
+        failureStart: "{their} attempt at first-aid",
+        coolDownPhrase: "{they} {is} out of first-aid supplies",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
