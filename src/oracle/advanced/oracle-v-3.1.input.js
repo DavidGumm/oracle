@@ -66,21 +66,7 @@ const startingActionRate = (starting, min, max) => {
     return starting + (Math.random() * (min - max) + max)
 }
 
-/**
- * Gets the correct is or are for the point of view.
- * @param {String} who Who is the POV for.
- * @returns The correct is or are for the POV.
- */
-const getCopular = (who) => {
-    switch (who) {
-        case "You":
-            return "are";
-        case "I":
-            return "am";
-        default:
-            return "is";
-    }
-}
+
 
 /**
  * Replaces placeholder values to ensure proper grammar
@@ -94,25 +80,33 @@ const formatGrammar = (playerName, stringToFormat) => {
         case "You":
             //Second Person
             stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{playerNamePossessive}/g, 'your');
             stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'your');
             stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'are');
             stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'you');
+            stringToFormat = stringToFormat.replace(/{playerReferToSelf}/g, 'yourself');
 
 
         case "I":
             //First Person
             stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{playerNamePossessive}/g, 'my');
             stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'my');
             stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'am');
             stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'I');
+            stringToFormat = stringToFormat.replace(/{playerReferToSelf}/g, 'myself');
+
         
 
         default:
             //Third person
             stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{playerNamePossessive}/g, `${playerName}'s`);
             stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'their');
             stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'is');
             stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'they');
+            stringToFormat = stringToFormat.replace(/{playerReferToSelf}/g, 'themself');
+
     }
 
     return stringToFormat.replace(/(?:^|(?:[.!?]\s))(.{1})/g, char => char.toUpperCase());
@@ -356,7 +350,11 @@ class Action {
         const message = isSuccess ? `Success! ${this.successStart} ${phraseEnding}` : `Fail! ${this.failureStart} ${phraseEnding}`;
         return formatGrammar(this.name, message);
     }
-
+    /**
+     * Updates the player leveling for this action
+     * @param {*} isSuccess 
+     * @param {*} isActiveAction 
+     */
     updateRate(isSuccess, isActiveAction) {
 
         const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
@@ -440,7 +438,7 @@ class Player {
             ...this.getCoolDownPhrase(),
             ...this.getReputation(),
             ...this.getResourceThresholds()
-        ].filter(e => e !== "").join(". ").trim()
+        ].filter(e => e !== "").join(". ").trim();
 
         if (status.length > 0) {
             let statusMessage;
@@ -554,7 +552,7 @@ const defaultAction = {
     // The success endings for the action.
     // Add as many as you like but keep one in the array.
     // The system randomly selects one of the endings for the action.
-    successEndings: ["was masterful", "was executed perfectly", "was flawless"],
+    successEndings: ["was masterful.", "was executed perfectly.", "couldn't have gone better!"],
     // Add as many as you like but keep one in the array.
     // The system randomly selects one of the endings for the action.
     failureEndings: ["clumsy", "inept", "futile"],
@@ -569,7 +567,7 @@ const defaultAction = {
     // Example: "Bob tries to move the rock. and Bob failing, it ends up being futile."
     failureStart: "{playerPossessive} action was",
     // The message to display when the action is on cool down.
-    coolDownPhrase: "unable to act",
+    coolDownPhrase: "{playerName} {playerCopular} unable to act",
     // The note for the action, that are added to author notes for special actions.
     // This is a good place to add special rules for the action.
     note: "",
@@ -705,11 +703,11 @@ const customActions = [
     },
     {
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
-        successEndings: ["agile", "graceful", "fluid"],
-        failureEndings: ["unprepared", "reckless", "awkward"],
-        successStart: "the movement is successfully and",
-        failureStart: "the attempt to move was",
-        coolDownPhrase: "barely able to move",
+        successEndings: ["is agile", "is graceful", "is fluid"],
+        failureEndings: ["was pitiful", "was reckless", "was awkward"],
+        successStart: "{playerNamePossessive} movement",
+        failureStart: "{playerNamePossessive} attempt to move",
+        coolDownPhrase: "{playerName} {playerCopular} too tired to move.",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -773,7 +771,7 @@ const customActions = [
         failureEndings: ["is overlooked", "annoys the crowd", "is bland"],
         successStart: "{playerPossessive} performance",
         failureStart: "Despite {playerPossessive} efforts, {playerPossessive} performance",
-        coolDownPhrase: "preforming poorly",
+        coolDownPhrase: "{playerName} can't bring {playerReferToSelf} to perform",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -1049,6 +1047,11 @@ const tester = (state, text, history, storyCards, info) => {
                     activePlayerName = actionName;
                     action = new Action(names);
                     player.actions.push(action); // Add the new action to the actions array
+
+                    //Format all grammatical placeholders in the new action
+                    formatGrammar(player.name, action.successStart);
+                    formatGrammar(player.name, action.failureStart);
+                    action.successEndings.forEach(currPhrase => currPhrase = formatGrammar(player.name, currPhrase))
                 }
                 return action;
             }
