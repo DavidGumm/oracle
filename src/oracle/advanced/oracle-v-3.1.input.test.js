@@ -21,7 +21,7 @@ const info = {
     actionCount: 1,
     characters: ["character1", "character2"]
 };
-const authorsNoteRegEx = /^\[You are, (|exhausted, )unable to make sense, a skilled fighter, (in good health|dead)\.\] (There is a strange smell in the air|There is sudden silence|A strange noise can he heard)\. (It is clear outside|There are clouds outside|There are clouds and precipitation outside|It is thundering outside|There is a thick fog outside)\. Style Keywords: Light, breezy, punchy, whimsical, comedic\. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual\. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining\./
+const authorsNoteRegEx = /^\[You are, (|exhausted, )unable to make sense, a skilled fighter, (in good health|dead)\.\] (|\[Bob is, unable to make sense, a skilled fighter, (in good health|dead)\.\] )(There is a strange smell in the air|There is sudden silence|A strange noise can he heard)\. (It is clear outside|There are clouds outside|There are clouds and precipitation outside|It is thundering outside|There is a thick fog outside)\. Style Keywords: Light, breezy, punchy, whimsical, comedic\. Structure Keywords: Rapid, dynamic, action - packed, lively interactions, visual\. Tone Keywords: Light, humorous, playful, fun, engaging, entertaining\./
 
 const frontMemoryFightMatch = / And the attack is made with (deadly precision|brutal efficiency|unyielding determination)\.| But the attack proves (misjudged|ineffective|reckless)!/;
 const frontMemoryMoveMatch = / And the movement is successfully and (graceful|fluid|agile)\.| But the attempt to move was (awkward|unprepared|reckless)!/;
