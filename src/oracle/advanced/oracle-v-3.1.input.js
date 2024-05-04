@@ -344,11 +344,11 @@ class Action {
      * @param {Boolean} isSuccess
      * @returns {String} The phrase for the action.
      */
-    getPhrase(isSuccess) {
+    getPhrase(isSuccess, activePlayerName) {
         const note = this.note !== "" ? ` [${this.name[0]} Action Note: ${this.note}]` : "";
         const phraseEnding = getRandomItem(isSuccess ? this.successEndings : this.failureEndings);
         const message = isSuccess ? `Success! ${this.successStart} ${phraseEnding}` : `Fail! ${this.failureStart} ${phraseEnding}`;
-        return formatGrammar(this.name, message);
+        return formatGrammar(activePlayerName.name, message);
     }
     /**
      * Updates the player leveling for this action
@@ -632,7 +632,7 @@ const defaultCharismaAction = {
     failureEndings: ["awkward", "unconvincing", "ineffectual"],
     successStart: "the words are",
     failureStart: "the words are",
-    coolDownPhrase: "unable to make sense",
+    coolDownPhrase: "{playerPossessive} charisma isn't working",
     note: "",
     rate: .5,
     leveling: {
@@ -666,11 +666,11 @@ const customActions = [
         // The name of the action, this is what will trigger the system to use this action.
         // Add as many names as you like, but the first name should be the primary name.
         name: ["fighting", "combat", "weapon", "hit", "strike", "attack", "counter", "counterattack", "assault", "ambush"],
-        successEndings: ["brutal efficiency", "deadly precision", "unyielding determination"],
-        failureEndings: ["misjudged", "ineffective", "reckless"],
-        successStart: "the attack is made with",
-        failureStart: "the attack proves",
-        coolDownPhrase: "venerable to attack",
+        successEndings: ["with brutal efficiency!", "with deadly precision!", "with unyielding determination!"],
+        failureEndings: ["was sloppy.", "was ineffective.", "was reckless."],
+        successStart: "{playerName} attacks",
+        failureStart: "{playerNamePossessive} attempt to attack",
+        coolDownPhrase: "{playerName} {playerCopular} vulnerable to attack",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -703,11 +703,11 @@ const customActions = [
     },
     {
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
-        successEndings: ["is agile", "is graceful", "is fluid"],
-        failureEndings: ["was pitiful", "was reckless", "was awkward"],
+        successEndings: ["is agile!", "is graceful!", "is fluid!"],
+        failureEndings: ["was pitiful.", "was reckless.", "was awkward."],
         successStart: "{playerNamePossessive} movement",
         failureStart: "{playerNamePossessive} attempt to move",
-        coolDownPhrase: "{playerName} {playerCopular} too tired to move.",
+        coolDownPhrase: "{playerName} {playerCopular} too tired to move",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -1051,6 +1051,7 @@ const tester = (state, text, history, storyCards, info) => {
                     //Format all grammatical placeholders in the new action
                     formatGrammar(player.name, action.successStart);
                     formatGrammar(player.name, action.failureStart);
+                    fornatGrannar(player.name, action.coolDownPhrase);
                     action.successEndings.forEach(currPhrase => currPhrase = formatGrammar(player.name, currPhrase))
                 }
                 return action;
@@ -1409,4 +1410,4 @@ const tester = (state, text, history, storyCards, info) => {
 
     return { state, text, history, storyCards, info }
 }
-module.exports = { tester, getRandomItem, getNextItem, getCopular, checkWithinBounds, startingActionRate, Game, Player, CoolDown, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions };
+module.exports = { tester, getRandomItem, getNextItem, checkWithinBounds, startingActionRate, Game, Player, CoolDown, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions };

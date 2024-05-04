@@ -42,6 +42,6 @@ const formatGrammar = (playerName, stringToFormat) => {
     return stringToFormat.replace(/(?:^|(?:[.!?]\s))(.{1})/g, char => char.toUpperCase());
 }
 
-str = "{playerReferTo} tried to bring {playerReferToSelf} to perform. but {playerReferTo} just couldn't.";
+str = "{playerReferTo} tried to bring {playerReferToSelf} to perform. but {playerReferTo} just couldn't";
 
 console.log(formatGrammar("I", str));
