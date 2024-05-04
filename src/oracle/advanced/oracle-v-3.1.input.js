@@ -92,27 +92,30 @@ const getCopular = (who) => {
 const formatGrammar = (playerName, stringToFormat) => {
     switch (playerName) {
         case "You":
-
+            //Second Person
             stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
             stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'your');
             stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'are');
+            stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'you');
 
 
         case "I":
-
+            //First Person
             stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
             stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'my');
             stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'am');
+            stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'I');
         
 
         default:
-
+            //Third person
             stringToFormat = stringToFormat.replace(/{playerName}/g, playerName);
             stringToFormat = stringToFormat.replace(/{playerPossessive}/g, 'their');
             stringToFormat = stringToFormat.replace(/{playerCopular}/g, 'is');
+            stringToFormat = stringToFormat.replace(/{playerReferTo}/g, 'they');
     }
 
-    return stringToFormat.replace(/(?:^|(?:[.!?]\s))(\w{1})/g, char => char.toUpperCase());
+    return stringToFormat.replace(/(?:^|(?:[.!?]\s))(.{1})/g, char => char.toUpperCase());
 }
 
 
@@ -349,9 +352,9 @@ class Action {
      */
     getPhrase(isSuccess) {
         const note = this.note !== "" ? ` [${this.name[0]} Action Note: ${this.note}]` : "";
-        const adjective = getRandomItem(isSuccess ? this.successEndings : this.failureEndings);
-        const message = `${isSuccess ? this.successStart : this.failureStart} ${adjective}${note}${isSuccess ? "." : "!"}`;
-        return (isSuccess ? " And " : " But ") + message;
+        const phraseEnding = getRandomItem(isSuccess ? this.successEndings : this.failureEndings);
+        const message = isSuccess ? `Success! ${this.successStart} ${phraseEnding}` : `Fail! ${this.failureStart} ${phraseEnding}`;
+        return formatGrammar(this.name, message);
     }
 
     updateRate(isSuccess, isActiveAction) {
@@ -427,7 +430,7 @@ class Player {
     }
 
     getCoolDownPhrase() {
-        return this.actions.filter(a => a.coolDown.remainingTurns > 0 && a.coolDown.enabled).map(a => a.coolDownPhrase).filter(e => e != "");
+        return this.actions.filter(action => action.preventAction.cooldown).map(a => a.coolDownPhrase).filter(e => e != "");
     }
 
     getStatus() {
@@ -437,10 +440,22 @@ class Player {
             ...this.getCoolDownPhrase(),
             ...this.getReputation(),
             ...this.getResourceThresholds()
-        ].filter(e => e !== "").join(", ").trim()
+        ].filter(e => e !== "").join(". ").trim()
 
-
-        return status.length > 0 ? `[${this.name} ${getCopular(this.name)}, ${status}.]` : "";
+        if (status.length > 0) {
+            let statusMessage;
+            //Third person status
+            if (this.name !== "You" && this.name !== "I") {
+                statusMessage = `{playerName}'s Status: ${status}`;
+            }
+            //First or Second person status
+            else {
+                statusMessage = `{playerPossessive} Status: ${status}`;
+            }
+            return formatGrammar(this.name, statusMessage);
+        }
+        return "";
+        //return status.length > 0 ? `[${this.name} ${getCopular(this.name)}, ${status}.]` : "";
     }
 
     getReputation() {
@@ -552,7 +567,7 @@ const defaultAction = {
     // The message is combined with the failure ending to form the full message.
     // Example: "You try to move the rock. and You failing, it ends up being clumsy."
     // Example: "Bob tries to move the rock. and Bob failing, it ends up being futile."
-    failureStart: "fail, managing to be",
+    failureStart: "{playerPossessive} action was",
     // The message to display when the action is on cool down.
     coolDownPhrase: "unable to act",
     // The note for the action, that are added to author notes for special actions.
@@ -714,7 +729,7 @@ const customActions = [
             remainingTurns: 0
         },
         memorable: true,
-        knownFor: "parkour master",
+        knownFor: "a parkour master",
         memorableThreshold: 3,
         isResource: false,
         resources: [],
@@ -723,10 +738,10 @@ const customActions = [
     {
         name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
         successEndings: ["perceptive", "attentive", "detailed"],
-        failureEndings: ["overlooking", "being distracted", "lack of depth"],
-        successStart: "the observation is successful and",
-        failureStart: "failing to notice the details you fail by",
-        coolDownPhrase: "unable to focus",
+        failureEndings: ["but couldn't make out many details", "but lost focus", "but {playerReferTo} weren't very thorough"],
+        successStart: "The observation",
+        failureStart: "{playerReferTo} tried to pay attention,",
+        coolDownPhrase: "{playerName} cannot focus on {playerPossessive} surroundings",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -754,10 +769,10 @@ const customActions = [
     },
     {
         name: ["performance", "dancing", "singing", "jokes"],
-        successEndings: ["perceptive", "engaging", "lively"],
-        failureEndings: ["overlooked", "distracted", "bland"],
-        successStart: "the preform performance is",
-        failureStart: "despite the efforts, the performance is",
+        successEndings: ["draws attention", "is captivating", "is lively"],
+        failureEndings: ["is overlooked", "annoys the crowd", "is bland"],
+        successStart: "{playerPossessive} performance",
+        failureStart: "Despite {playerPossessive} efforts, {playerPossessive} performance",
         coolDownPhrase: "preforming poorly",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
@@ -787,10 +802,10 @@ const customActions = [
     {
         name: ["first-aid", "medicine", "medical"],
         successEndings: ["life saving", "skillful", "precise"],
-        failureEndings: ["misjudged", "ineffective", "reckless"],
+        failureEndings: ["is ineffective", "doesn't help much", "is reckless"],
         successStart: "the first-aid attempt succeeds and is",
-        failureStart: "the attempt at first-aid proves",
-        coolDownPhrase: "are out of first-aid supplies",
+        failureStart: "{playerPossessive} attempt at first-aid",
+        coolDownPhrase: "{playerReferTo} {playerCopular} out of first-aid supplies",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -810,7 +825,7 @@ const customActions = [
             remainingTurns: 0
         },
         memorable: true,
-        knownFor: "a skilled healer",
+        knownFor: "a practiced healer",
         memorableThreshold: 3,
         isResource: true,
         resources: [{
