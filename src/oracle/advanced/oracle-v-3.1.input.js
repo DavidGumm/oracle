@@ -539,7 +539,7 @@ const defaultAction = {
     // The success endings for the action.
     // Add as many as you like but keep one in the array.
     // The system randomly selects one of the endings for the action.
-    successEndings: ["masterful", "remarkable", "flawless"],
+    successEndings: ["was masterful", "was executed perfectly", "was flawless"],
     // Add as many as you like but keep one in the array.
     // The system randomly selects one of the endings for the action.
     failureEndings: ["clumsy", "inept", "futile"],
@@ -547,7 +547,7 @@ const defaultAction = {
     // The message is combined with the success ending to form the full message.
     // Example: "You try to move the rock. and You successfully, manage to be masterful."
     // Example: "Bob tries to move the rock. and Bob successfully, manage to be masterful."
-    successStart: "successfully, manage to be",
+    successStart: "{playerPossessive} action",
     // The start of the failure message as seen by the AI.
     // The message is combined with the failure ending to form the full message.
     // Example: "You try to move the rock. and You failing, it ends up being clumsy."
