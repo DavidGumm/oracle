@@ -1,5 +1,6 @@
 // Every script needs a modifier function
 const modifier = (text) => {
+
     // ++++++++++++++++++++++++
     // ++++++++++++++++++++++++
     // DO NOT EDIT THIS SECTION
@@ -37,14 +38,14 @@ const modifier = (text) => {
     /**
      * Accounts for both an upper and lower bound
      *
-     * @param {number} number number to check
-     * @param {number} lowerBound
-     * @param {number} upperBound
+     * @param {Number} number number to check
+     * @param {Number} lowerBound
+     * @param {Number} upperBound
      * @returns Adjusted number
      *  ----------------------------------
-     * Accounts only for the lower bound
-     * @param {number} number number to check
-     * @param {number} lowerBound required
+     * Accounts for only a lower bound
+     * @param {Number} number number to check
+     * @param {Number} lowerBound
      * @returns Adjusted number
      */
     const checkWithinBounds = (number, lowerBound, upperBound) => {
@@ -84,9 +85,9 @@ const modifier = (text) => {
 
     /**
      * The starting action rates.
-     * @param {number} starting The minimum value for an action.
-     * @param {number} MaxBonusRate The max starting bonus rate.
-     * @param {number} MinBonusRate The min starting bonus rate.
+     * @param {Number} starting The minimum value for an action.
+     * @param {Number} MaxBonusRate The max starting bonus rate.
+     * @param {Number} MinBonusRate The min starting bonus rate.
      */
     class ActionRate {
         constructor(actionRate) {
@@ -98,8 +99,8 @@ const modifier = (text) => {
 
     /**
      * The event for the event system.
-     * @param {number} chance The chance this can be the event
-     * @param {string} description The description of the event to be presented to the AI
+     * @param {Number} chance The chance this can be the event
+     * @param {String} description The description of the event to be presented to the AI
      */
     class EventType {
         constructor(eventType) {
@@ -116,12 +117,12 @@ const modifier = (text) => {
         /**
          * Represents a constructor for the event system.
          * @param {Object} eventSystem - The event system object.
-         * @param {string} eventSystem.name - The name of the event system.
+         * @param {String} eventSystem.name - The name of the event system.
          * @param {Array} eventSystem.events - The events associated with the event system.
-         * @param {number} eventSystem.chance - The chance of an event changing.
-         * @param {number} eventSystem.current - The current event.
-         * @param {string} eventSystem.description - The description of the event system.
-         * @param {boolean} eventSystem.isRandom - Indicates if events are chosen randomly or in sequence.
+         * @param {Number} eventSystem.chance - The chance of an event changing.
+         * @param {Number} eventSystem.current - The current event.
+         * @param {String} eventSystem.description - The description of the event system.
+         * @param {Boolean} eventSystem.isRandom - Indicates if events are chosen randomly or in sequence.
          */
         constructor(eventSystem) {
             this.name = eventSystem.name;
@@ -153,11 +154,11 @@ const modifier = (text) => {
 
     /**
      * The player exhaustion tracking system.
-     * @param {boolean} enabled If the system is active and in use.
-     * @param {number} threshold The threshold at which the system activates.
-     * @param {number} inactive Turns of inactivity.
-     * @param {number} active Turns of activity.
-     * @param {string} message The message to display when exhausted.
+     * @param {Boolean} enabled If the system is active and in use.
+     * @param {Number} threshold The threshold at which the system activates.
+     * @param {Number} inactive Turns of inactivity.
+     * @param {Number} active Turns of activity.
+     * @param {String} message The message to display when exhausted.
      */
     class Exhaustion {
         constructor(exhaustion) {
@@ -171,11 +172,11 @@ const modifier = (text) => {
 
     /**
      * The threat system for use durning 'low' player activity. The system system is activated off a lack of player action over time.
-     * @param {boolean} enabled Enabled the player activity threat system
-     * @param {number} threshold The threshold to drop below before activating
-     * @param {number} active The current count of active turns
-     * @param {number} inactive The current count of inactive turns
-     * @param {string[]} array The outcomes you might encounter for player inaction
+     * @param {Boolean} enabled Enabled the player activity threat system
+     * @param {Number} threshold The threshold to drop below before activating
+     * @param {Number} active The current count of active turns
+     * @param {Number} inactive The current count of inactive turns
+     * @param {String[]} array The outcomes you might encounter for player inaction
      */
     class Threat {
         constructor(threat) {
@@ -189,13 +190,13 @@ const modifier = (text) => {
 
     /**
      * The leveling information for an action.
-     * @param {boolean} increaseEnabled Allow action increase
-     * @param {boolean} decreaseEnabled Allow action decrease
-     * @param {number} maxRate The actions maximum rate
-     * @param {number} minRate The actions minimum rate
-     * @param {number} rateOfChange The base rate of action change
-     * @param {number} rateOfChangeFailureMultiplier The experience failure multiplier
-     * @param {number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
+     * @param {Boolean} increaseEnabled Allow action increase
+     * @param {Boolean} decreaseEnabled Allow action decrease
+     * @param {Number} maxRate The actions maximum rate
+     * @param {Number} minRate The actions minimum rate
+     * @param {Number} rateOfChange The base rate of action change
+     * @param {Number} rateOfChangeFailureMultiplier The experience failure multiplier
+     * @param {Number} decreaseRate The rate of action decrease. I recommend it be the success experience divided by less than the number of actions
      */
     class Leveling {
         constructor(leveling) {
@@ -211,11 +212,11 @@ const modifier = (text) => {
 
     /**
      * The actions cool down subsystem.
-     * @param {boolean} enabled Enables the action cool down system
-     * @param {number} decreaseRatePerAction How quick the cool down rate goes down per player turn
-     * @param {number} failureThreshold The failure threshold for when to cool down actions
-     * @param {number} failureCount The current count
-     * @param {number} remainingTurns The remaining Cool down turns
+     * @param {Boolean} enabled Enables the action cool down system
+     * @param {Number} decreaseRatePerAction How quick the cool down rate goes down per player turn
+     * @param {Number} failureThreshold The failure threshold for when to cool down actions
+     * @param {Number} failureCount The current count
+     * @param {Number} remainingTurns The remaining number of turns an action is cooling down
      */
     class CoolDown {
         constructor(coolDown) {
@@ -225,6 +226,7 @@ const modifier = (text) => {
             this.failureCount = coolDown.failureCount;
             this.remainingTurns = coolDown.remainingTurns;
         }
+
         /**
          * Increases the cool down.
          */
@@ -233,6 +235,7 @@ const modifier = (text) => {
                 this.failureCount = Math.min(this.failureThreshold, this.failureCount + 1);
                 if (this.failureCount >= this.failureThreshold) {
                     this.remainingTurns = this.failureThreshold;
+                    this.failureCount = 0;
                 }
             }
         }
@@ -301,6 +304,7 @@ const modifier = (text) => {
             this.memorableThreshold = action.memorableThreshold;
             this.isResource = action.isResource;
             this.resources = action.resources.map(r => new ActionResource(r));
+            this.preventAction = {};
         }
 
         /**
@@ -316,16 +320,27 @@ const modifier = (text) => {
             return (isSuccess ? " And " : " But ") + message;
         }
 
-        updateRate(isSuccess, isIncrease) {
-            if (this.leveling.increaseEnabled && isIncrease) {
-                const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
-                this.rate = Math.min(this.leveling.maxRate, newRate);
+        updateRate(isSuccess, isActiveAction) {
+
+            const newRate = this.rate + (this.leveling.rateOfChange * (isSuccess ? 1 : this.leveling.rateOfChangeFailureMultiplier));
+            //Processes the action used by a user
+            if (isActiveAction) {
+
+                if (newRate >= this.rate && this.leveling.increaseEnabled) {
+                    this.rate = Math.min(newRate, this.leveling.maxRate);
+                }
+                if (newRate < this.rate && this.leveling.decreaseEnabled) {
+                    this.rate = Math.max(newRate, this.leveling.minRate);
+                }
             }
-            if (this.leveling.decreaseEnabled && !isIncrease) {
+
+            else if (this.leveling.decreaseEnabled) {
                 this.rate = Math.max(this.leveling.minRate, this.rate - this.leveling.decreaseRate);
             }
         }
     }
+
+
 
     class StatusEffects {
         constructor(statusEffects) {
@@ -368,11 +383,12 @@ const modifier = (text) => {
             this.eventSystem = player.eventSystem.map(e => new EventSystem(e));
             this.exhaustion = new Exhaustion(player.exhaustion);
             this.threat = new Threat(player.threat);
+            this.disableActions = {};
         }
 
-        updateActions(isSuccess, actionName) {
-            this.actions.forEach(a => {
-                a.updateRate(isSuccess, a.name.includes(actionName));
+        updateActions(actionName, isSuccess) {
+            this.actions.forEach(currentAction => {
+                currentAction.updateRate(isSuccess, currentAction.name.includes(actionName));
             });
         }
 
@@ -805,7 +821,7 @@ const modifier = (text) => {
         // The exhaustion system for the player.
         exhaustion: {
             // Enable the exhaustion system.
-            enabled: false,
+            enabled: true,
             // The threshold for the exhaustion system.
             // This is the number of actions before the system activates.
             threshold: 10,
@@ -819,13 +835,13 @@ const modifier = (text) => {
         // The threat system for the player.
         threat: {
             // Enable the threat system.
-            enabled: false,
+            enabled: true,
             // The threshold for the threat system.
             threshold: 10,
             // The number of active turns.
             active: 0,
             // The number of inactive turns.
-            inactive: 0,
+            inactive: 11,
             // The outcomes for the threat system when the player is inactive.
             // Add as many as you like but keep one in the array.
             // The system randomly selects one of the outcomes for the player inaction.
@@ -868,10 +884,11 @@ const modifier = (text) => {
                 // The thresholds are checked in order from top to bottom.
                 // The threshold number should be between the min and max values of the resource.
                 thresholds: [
-                    { threshold: 1, message: "critically injured" },
-                    { threshold: 4, message: "injured" },
+                    { threshold: 0, message: "dead" },
+                    { threshold: 3, message: "critically injured" },
+                    { threshold: 5, message: "injured" },
                     { threshold: 7, message: "slightly injured" },
-                    { threshold: 99, message: "in good health" },
+                    { threshold: Infinity, message: "in good health" },
                 ],
             },
         ],
@@ -962,6 +979,38 @@ const modifier = (text) => {
             return game.players.find(p => p.name === name) || game.players[0];
         }
 
+        const getActionByName = name => {
+            if (game.dynamicActions && name !== "default" && name !== "charisma" && name !== "") {
+                let action = activePlayer.actions.find(a => a.name.includes(name.toLowerCase()));
+                if (!action) {
+                    // If skill does not exist, create it with default attributes.
+                    let names = [];
+                    names.push(name.toLowerCase());
+                    activePlayerName = name;
+                    action = new Action(names);
+                    activePlayer.actions.push(action); // Add the new action to the actions array
+                }
+                return action;
+            }
+            return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
+        }
+
+        /**
+         * Determine success or failure of a action
+         * @param {Action} action The action to check.
+         * @returns {boolean} The success or failure of the action check.
+         */
+        const determineFate = (action) => {
+            //Check if the action is disabled
+            if (Object.values(action.preventAction).includes(true) || Object.values(activePlayer).includes(true)) {
+                return false;
+            }
+            const success = Math.random() < action.rate;
+            const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
+            game.messages = [message];
+            return success;
+        }
+
         const delphicBase = () => {
             // Set the default game state
             if (!state.game) {
@@ -985,64 +1034,44 @@ const modifier = (text) => {
 
         const activePlayer = getPlayerByName(activePlayerName);
 
-        const getActionByName = name => {
-            if (game.dynamicActions && name !== "default" && name !== "charisma" && name !== "") {
-                let action = activePlayer.actions.find(a => a.name.includes(name.toLowerCase()));
-                if (!action) {
-                    // If skill does not exist, create it with default attributes.
-                    let names = [];
-                    names.push(name.toLowerCase());
-                    activePlayerName = name;
-                    action = new Action(names);
-                    activePlayer.actions.push(action); // Add the new action to the actions array
-                }
-                return action;
-            }
-            return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
-        }
+
+        //++++++++++++++++++++++++
+        //++++++++++++++++++++++++
+        // START MODULE PROCESSING
+        //++++++++++++++++++++++++
+        //++++++++++++++++++++++++
+
+
+        //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
+        //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+        //Arguments go as: (isActiveTurn, action, isSuccess)
+        //All processing functions must account for a case where (action === undefined)
 
         /**
-         * Determine success or failure of a action
-         * @param {action} action The action to check.
-         * @returns {boolean} The success or failure of the action check.
+         * Array for modules that aren't sensitive to the order of processing
          */
-        const determineFate = (action) => {
-            if (action.coolDown.enabled && (action.coolDown.remainingTurns > 0)) {
-                return false;
-            }
-            const success = Math.random() < action.rate;
-            if (success) {
-                processReputation(action);
-            }
-            const message = success ? `${action.name[0]} check succeeded.` : `${action.name[0]} check failed.`
-            game.messages = [message];
-            return success;
-        }
+        let moduleProcessingGeneral = [];
 
         /**
-         * Process all the actions providing an update to each non active action.
-         * @param {string} name The Name of the action being used actively and action being ignored for updates.
+         * Array for modules that must be called after the general processing is complete
          */
-        const processActionsCoolDown = (name, isSuccess) => {
-            if (isSuccess) {
-                game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
-                activePlayer.actions.forEach(a => {
-                    if (a.name !== name && a.coolDown > 0) {
-                        a.coolDown += -a.coolDown.decreaseRatePerAction;
-                    }
-                });
-            } else {
-                activePlayer.actions.find(a => a.name.includes(name)).coolDown.increase();
-            }
-        }
+        let moduleProcessingLast = [];
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Default Modules (WARNING DO NOT TOUCH)
+        // ++++++++++++++++++++++++++++++++++++++++
+
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Player Activity
+        // ++++++++++++++++++++++++++++++++++++++++
 
         /**
          * Logic for handling the player exhaustion.
-         * @param {boolean} active If the player turn is an active one.
+         * @param {Boolean} active If the player turn is an active one.
          */
-        const processPlayerActivity = (active) => {
-            if (!activePlayer.exhaustion.enabled) return;
-            if (active) {
+        const processPlayerActivity = (isActiveTurn) => {
+            if (isActiveTurn) {
                 activePlayer.exhaustion.inactive = 0;
                 activePlayer.exhaustion.active = checkWithinBounds(activePlayer.exhaustion.active + 1, 0, Number.MAX_SAFE_INTEGER);
                 activePlayer.threat.active = checkWithinBounds(activePlayer.threat.active + 1, 0, Number.MAX_SAFE_INTEGER);
@@ -1054,43 +1083,154 @@ const modifier = (text) => {
             }
         }
 
+        if (activePlayer.exhaustion.enabled) {
+            moduleProcessingGeneral.push(processPlayerActivity);
+        }
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Action Cooldown
+        // ++++++++++++++++++++++++++++++++++++++++
+
+
+        /**
+         * Process all the actions providing an update to each non active action.
+         * @param {Boolean} isActiveTurn If the turn is active
+         * @param {Action} action The action being used actively
+         */
+        const processActionsCoolDown = (isActiveTurn, activeAction, isSuccess) => {
+            game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
+            //If an action was supplied
+            if (activeAction) {
+
+                //Increase the fail count
+                if (!isSuccess) {
+                    activeAction.coolDown.increase();
+                }
+            }
+
+            //If an action was not supplied
+            else {
+                activePlayer.actions.forEach(currentAction => {
+                    if (currentAction.coolDown.failureCount > 0) {
+                        currentAction.coolDown.decrease();
+                    }
+                });
+            }
+
+            activePlayer.actions.forEach(currentAction => {
+                if (currentAction.coolDown.remainingTurns > 0) {
+                    currentAction.preventAction.cooldownToggle = true;
+                }
+                else {
+                    currentAction.preventAction.cooldownToggle = false;
+                }
+            });
+        }
+
+        //Toggle for Action Cooldown module
+        if (true) {
+
+
+            moduleProcessingGeneral.push(processActionsCoolDown);
+
+            //Initialize cooldown toggle for preventing actions. I play to make a class for modules with functions to handle this.
+            state.game.players.forEach(p => p.actions.forEach(currentAction => {
+                if (!currentAction.preventAction.cooldownToggle) {
+                    currentAction.preventAction.cooldownToggle = false;
+                }
+            }));
+        }
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Player Reputation
+        // ++++++++++++++++++++++++++++++++++++++++
+
+        const processReputation = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
+                    activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                    activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
+                }
+            }
+        }
+
+        //moduleProcessingGeneral.push(processReputation);
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Update Player Resources
+        // ++++++++++++++++++++++++++++++++++++++++
+
+        const setPlayerResources = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                activePlayer.setResources(action, isSuccess);
+            }
+        }
+
+        moduleProcessingLast.push(setPlayerResources);
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Update Player Actions
+        // ++++++++++++++++++++++++++++++++++++++++
+
+        const updatePlayerActions = (isActiveTurn, action, isSuccess) => {
+            if (action) {
+                activePlayer.updateActions(action.name[0], isSuccess);
+            }
+        }
+
+        moduleProcessingLast.push(updatePlayerActions);
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // End Default Modules (WARNING DO NOT TOUCH)
+        // ++++++++++++++++++++++++++++++++++++++++
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // ++++++++++++++++++++++++++++++++++++++++
+        // END MODULE PROCESSING
+        // ++++++++++++++++++++++++++++++++++++++++
+        // ++++++++++++++++++++++++++++++++++++++++
+
+        /**
+         * Handles the processing for game modules.
+         * @param {Boolean} isActiveTurn If the turn is active.
+         * @param {Action} action The action being used actively.
+         * @param {Boolean} isSuccess If the action was a success.
+         */
+        const callModuleProcessing = (isActiveTurn, action, isSuccess) => {
+            moduleProcessingGeneral.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
+            moduleProcessingLast.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
+        }
+
         /**
          * The action command parse for use as command parse and entry point.
-         * @param {string} text The user imputed text.
+         * @param {String} text The user imputed text.
          */
         const actionParse = () => {
+            let isActiveTurn;
             if (isDoAction && !isSpeechAction) {
                 const action = getActionByName((actionMatch[3] || "default"));
+                isActiveTurn = true;
                 const isSuccess = determineFate(action);
-                processActionsCoolDown(action.name[0], isSuccess);
-                activePlayer.setResources(isSuccess, action.name[0]);
-                activePlayer.updateActions(isSuccess, action.name[0]);
+                callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
                 // If speech is captured
                 const action = getActionByName("charisma");
+                isActiveTurn = false;
                 const isSuccess = determineFate(action);
-                processPlayerActivity(false);
-                processActionsCoolDown(action.name[0], isSuccess);
-                activePlayer.setResources(isSuccess, action.name[0]);
-                activePlayer.updateActions(isSuccess, action.name[0]);
+                callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else {
-                processPlayerActivity(false);
+                isActiveTurn = false;
+                callModuleProcessing(isActiveTurn);
                 return "";  // No relevant action found
             }
         }
 
-        const processReputation = (action) => {
-            if (game.enableReputationSystem && (Math.random() < action.memorable)) {
-                activePlayer.actionHistory.push(new ActionHistory(action.name[0], 1));
-                activePlayer.actionHistory = activePlayer.actionHistory.slice(game.actionHistorySize);
-            }
-        }
-
         /**
-         * Get currently active events.
-        */
+         * Get a random item from an array.
+         * @returns The event system.
+         */
         const getEventSystem = () => {
             if (game.eventSystemEnabled) {
                 return game.eventSystem.map(e => e.description);
@@ -1103,13 +1243,8 @@ const modifier = (text) => {
          * @returns The random item from the active players threat array.
          */
         const suddenly = () => {
-            if (!activePlayer.threat.enabled) return "";
-            const activity = Math.max(activePlayer.threat.active, activePlayer.threat.inactive);
-            if (activity < activePlayer.threat.threshold) {
-                // add to authors notes
-                return getRandomItem(activePlayer.threat.array);
-            }
-            return "";
+            if (!activePlayer.threat.enabled && !(activePlayer.threat.inactive > activePlayer.threat.threshold)) return "";
+            return getRandomItem(activePlayer.threat.array);
         }
 
         /**
@@ -1117,12 +1252,14 @@ const modifier = (text) => {
          * @returns The status.
          */
         const getPlayersStatus = () => {
-            const status = [...game.players.map(p => p.getStatus())].filter(e => e !== "")
-                .join(" ")
-                .trim();
-            return status.length > 0 ? status : "";
+            const status = [...game.players.map(p => p.getStatus())].filter(e => e !== "");
+            return status;
         }
 
+        /**
+         * Get the resource thresholds.
+         * @returns The resource thresholds.
+         */
         const getResourceThresholds = () => {
             let thresholds = [];
             game.resources.forEach(r => {
@@ -1144,18 +1281,19 @@ const modifier = (text) => {
         state.memory.frontMemory = actionParse();
 
         state.memory.authorsNote = [
-            getPlayersStatus(),
+            ...getPlayersStatus(),
             suddenly(),
             ...getEventSystem(),
             ...getResourceThresholds(),
             game.authorsNote,
         ].filter(e = e => e !== "").join(" ").trim();
 
-        // // Notify the player of the status.
-        // if (game.enablePlayerMessage) {
-        //     state.message = "This is not enabled yet as the message system is not fully implemented on AI Dungeon.";
-        //     game.messages = [];
-        // }
+        // Notify the player of the status.
+        if (game.enablePlayerMessage) {
+            // This is not enabled yet as the message system is not fully implemented on AI Dungeon.
+            // state.message = "";
+            game.messages = [];
+        }
         state.game = game;
     }
     oracle();
