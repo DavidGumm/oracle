@@ -69,50 +69,58 @@ const startingActionRate = (starting, min, max) => {
 
 
 /**
- * Replaces placeholder values to ensure proper grammar
- * Placeholders:
+ * Replaces placeholder values to ensure proper grammar. Note: Placeholders reference the player.
+ * 
  * @param {*} playerName 
  * @param {*} stringToFormat 
  * @returns 
  */
 const formatGrammar = (playerName, stringToFormat) => {
+    
+    stringToFormat = stringToFormat.toLowerCase();
     switch (playerName) {
         case "You":
             //Second Person
-            stringToFormat = stringToFormat.replace(/{player}/g, playerName);
-            stringToFormat = stringToFormat.replace(/{player's}/g, 'your');
-            stringToFormat = stringToFormat.replace(/{their}/g, 'your');
+            stringToFormat = stringToFormat.replace(/{pythia}/g, 'you');
+            stringToFormat = stringToFormat.replace(/{pythia's}/g, 'your');
             stringToFormat = stringToFormat.replace(/{is}/g, 'are');
             stringToFormat = stringToFormat.replace(/{are}/g, 'are');
+            stringToFormat = stringToFormat.replace(/{was}/g, 'were');
+            stringToFormat = stringToFormat.replace(/{were}/g, 'were');
             stringToFormat = stringToFormat.replace(/{they}/g, 'you');
+            stringToFormat = stringToFormat.replace(/{their}/g, 'your');
             stringToFormat = stringToFormat.replace(/{themself}/g, 'yourself');
 
 
         case "I":
             //First Person
-            stringToFormat = stringToFormat.replace(/{player}/g, playerName);
-            stringToFormat = stringToFormat.replace(/{player's}/g, 'my');
-            stringToFormat = stringToFormat.replace(/{their}/g, 'my');
+            stringToFormat = stringToFormat.replace(/{pythia}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{pythia's}/g, 'my');
             stringToFormat = stringToFormat.replace(/{is}/g, 'am');
             stringToFormat = stringToFormat.replace(/{are}/g, 'am');
+            stringToFormat = stringToFormat.replace(/{was}/g, 'was');
+            stringToFormat = stringToFormat.replace(/{were}/g, 'was');
             stringToFormat = stringToFormat.replace(/{they}/g, 'I');
+            stringToFormat = stringToFormat.replace(/{their}/g, 'my');
             stringToFormat = stringToFormat.replace(/{themself}/g, 'myself');
 
         
 
         default:
             //Third person
-            stringToFormat = stringToFormat.replace(/{player}/g, playerName);
-            stringToFormat = stringToFormat.replace(/{player's}/g, `${playerName}'s`);
-            stringToFormat = stringToFormat.replace(/{their}/g, 'their');
+            stringToFormat = stringToFormat.replace(/{pythia}/g, playerName);
+            stringToFormat = stringToFormat.replace(/{pythia's}/g, `${playerName}'s`);
             stringToFormat = stringToFormat.replace(/{is}/g, 'is');
             stringToFormat = stringToFormat.replace(/{are}/g, 'are');
+            stringToFormat = stringToFormat.replace(/{was}/g, 'was');
+            stringToFormat = stringToFormat.replace(/{were}/g, 'were');
             stringToFormat = stringToFormat.replace(/{they}/g, 'they');
+            stringToFormat = stringToFormat.replace(/{their}/g, 'their');
             stringToFormat = stringToFormat.replace(/{themself}/g, 'themself');
 
     }
 
-    return stringToFormat.replace(/(?:^|(?:[.!?]\s))(.{1})/g, char => char.toUpperCase());
+    return stringToFormat.replace(/(?:^|(?:[:.!?]\s))(.{1})/g, char => char.toUpperCase());
 }
 
 
@@ -351,7 +359,7 @@ class Action {
         const note = this.note !== "" ? ` [${this.name[0]} Action Note: ${this.note}]` : "";
         const phraseEnding = getRandomItem(isSuccess ? this.successEndings : this.failureEndings);
         const message = isSuccess ? `Success! ${this.successStart} ${phraseEnding}` : `Fail! ${this.failureStart} ${phraseEnding}`;
-        return formatGrammar(activePlayerName.name, message);
+        return formatGrammar(activePlayerName, message);
     }
     /**
      * Updates the player leveling for this action
@@ -447,11 +455,11 @@ class Player {
             let statusMessage;
             //Third person status
             if (this.name !== "You" && this.name !== "I") {
-                statusMessage = `{player}'s Status: ${status}`;
+                statusMessage = `{Pythia's} Status: ${status}.\n`;
             }
             //First or Second person status
             else {
-                statusMessage = `{their} Status: ${status}`;
+                statusMessage = `{Pythia's} Status: ${status}.\n`;
             }
             return formatGrammar(this.name, statusMessage);
         }
@@ -558,19 +566,17 @@ const defaultAction = {
     successEndings: ["was masterful.", "was executed perfectly.", "couldn't have gone better!"],
     // Add as many as you like but keep one in the array.
     // The system randomly selects one of the endings for the action.
-    failureEndings: ["clumsy", "inept", "futile"],
+    failureEndings: ["was clumsy.", "was inept.", "was futile."],
     // The start of the success message as seen by the AI.
     // The message is combined with the success ending to form the full message.
-    // Example: "You try to move the rock. and You successfully, manage to be masterful."
-    // Example: "Bob tries to move the rock. and Bob successfully, manage to be masterful."
-    successStart: "{their} action",
+    // Example: "{Pythia} tried to move the rock, and managed to do so masterfully."
+    successStart: "{Pythia's} action",
     // The start of the failure message as seen by the AI.
     // The message is combined with the failure ending to form the full message.
-    // Example: "You try to move the rock. and You failing, it ends up being clumsy."
-    // Example: "Bob tries to move the rock. and Bob failing, it ends up being futile."
-    failureStart: "{their} action was",
+    // Example: "{Pythia} tried to move the rock, it ends up being futile."
+    failureStart: "{Pythia's} action",
     // The message to display when the action is on cool down.
-    coolDownPhrase: "{player} {is} unable to act",
+    coolDownPhrase: "{Pythia} {is} unable to act",
     // The note for the action, that are added to author notes for special actions.
     // This is a good place to add special rules for the action.
     note: "",
@@ -633,9 +639,9 @@ const defaultCharismaAction = {
     name: ["charisma", "speech", "diplomacy", "words", "speak", "converse", "influence", "charm", "convene", "convince", "coax", "reason", "persuade", "persuasion", "encourage", "encouragement", "win over", "assure", "reassure", "reassurance", "comfort", "intimidate"],
     successEndings: ["persuasive", "charming", "full of conviction"],
     failureEndings: ["awkward", "unconvincing", "ineffectual"],
-    successStart: "the words are",
-    failureStart: "the words are",
-    coolDownPhrase: "{their} charisma isn't working",
+    successStart: "{Pythia's} words were",
+    failureStart: "{Pythia's} words were",
+    coolDownPhrase: "{Pythia's} charisma isn't working",
     note: "",
     rate: .5,
     leveling: {
@@ -671,9 +677,9 @@ const customActions = [
         name: ["fighting", "combat", "weapon", "hit", "strike", "attack", "counter", "counterattack", "assault", "ambush"],
         successEndings: ["with brutal efficiency!", "with deadly precision!", "with unyielding determination!"],
         failureEndings: ["was sloppy.", "was ineffective.", "was reckless."],
-        successStart: "{player} attacks",
-        failureStart: "{player's} attempt to attack",
-        coolDownPhrase: "{player} {is} vulnerable to attack",
+        successStart: "{Pythia} attacked",
+        failureStart: "{Pythia's} attempt to attack",
+        coolDownPhrase: "{Pythia} {is} vulnerable to attack",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -706,11 +712,11 @@ const customActions = [
     },
     {
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
-        successEndings: ["is agile!", "is graceful!", "is fluid!"],
+        successEndings: ["was agile!", "was graceful!", "was fluid!"],
         failureEndings: ["was pitiful.", "was reckless.", "was awkward."],
-        successStart: "{player's} movement",
-        failureStart: "{player's} attempt to move",
-        coolDownPhrase: "{player} {is} too tired to move",
+        successStart: "{Pythia's} movement",
+        failureStart: "{Pythia's} attempt to move",
+        coolDownPhrase: "{Pythia} {is} too tired to move",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -738,11 +744,11 @@ const customActions = [
     },
     {
         name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
-        successEndings: ["perceptive", "attentive", "detailed"],
-        failureEndings: ["but couldn't make out many details", "but lost focus", "but {they} weren't very thorough"],
-        successStart: "The observation",
-        failureStart: "{they} tried to pay attention,",
-        coolDownPhrase: "{player} cannot focus on {their} surroundings",
+        successEndings: ["was very perceptive.", "was attentive.", "was extremely thorough."],
+        failureEndings: ["but couldn't make out many details.", "but {they} lost focus.", "but {they} weren't very thorough."],
+        successStart: "{Pythia's} observation",
+        failureStart: "{Pythia} tried to pay attention,",
+        coolDownPhrase: "{Pythia} cannot focus on {their} surroundings",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -770,11 +776,11 @@ const customActions = [
     },
     {
         name: ["performance", "dancing", "singing", "jokes"],
-        successEndings: ["draws attention", "is captivating", "is lively"],
-        failureEndings: ["is overlooked", "annoys the crowd", "is bland"],
-        successStart: "{their} performance",
-        failureStart: "Despite {their} efforts, {their} performance",
-        coolDownPhrase: "{player} can't bring {themself} to perform",
+        successEndings: ["drew attention.", "was captivating.", "was lively."],
+        failureEndings: ["was overlooked.", "annoyed the crowd.", "was bland."],
+        successStart: "{Pythia's} performance",
+        failureStart: "Despite {pythia's} efforts, {their} performance",
+        coolDownPhrase: "{Pythia} can't bring {themself} to perform",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
@@ -802,11 +808,11 @@ const customActions = [
     },
     {
         name: ["first-aid", "medicine", "medical"],
-        successEndings: ["life saving", "skillful", "precise"],
+        successEndings: ["is life saving.", "is skillful.", "is precise."],
         failureEndings: ["is ineffective", "doesn't help much", "is reckless"],
-        successStart: "the first-aid attempt succeeds and is",
+        successStart: "the first-aid attempt",
         failureStart: "{their} attempt at first-aid",
-        coolDownPhrase: "{they} {is} out of first-aid supplies",
+        coolDownPhrase: "{Pythia} {is} out of first-aid supplies",
         note: "",
         rate: startingActionRate(defaultActionRate.starting, defaultActionRate.min, defaultActionRate.max),
         leveling: {
