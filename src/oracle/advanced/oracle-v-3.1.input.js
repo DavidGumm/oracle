@@ -4,6 +4,8 @@
 // ++++++++++++++++++++++++
 // ++++++++++++++++++++++++
 
+
+
 // This is the default rate for a new action.
 // Do not change this function, change the values in defaultActionRate.
 // Helper functions
@@ -301,7 +303,7 @@ class Action {
         this.memorableThreshold = action.memorableThreshold;
         this.isResource = action.isResource;
         this.resources = action.resources.map(r => new ActionResource(r));
-        this.preventAction = {};
+        this.preventAction = action.preventAction;
     }
 
     /**
@@ -380,7 +382,7 @@ class Player {
         this.eventSystem = player.eventSystem.map(e => new EventSystem(e));
         this.exhaustion = new Exhaustion(player.exhaustion);
         this.threat = new Threat(player.threat);
-        this.disableActions = {};
+        this.preventActions = player.preventActions;
     }
 
     updateActions(actionName, isSuccess) {
@@ -572,6 +574,7 @@ const defaultAction = {
     isResource: false,
     // The resource the action affects.
     resources: [],
+    preventAction: {},
 };
 
 // Feel free to change the values below to customize the default charisma action but only the text values except for the name charisma.
@@ -605,6 +608,7 @@ const defaultCharismaAction = {
     memorableThreshold: 3,
     isResource: false,
     resources: [],
+    preventAction: {},
 };
 
 // Custom actions is an array of actions that can be added to the game. Define as many as you like, but make sure to lower the decreaseRate in the leveling object to match the number of actions including the charisma action but not the default action.
@@ -646,7 +650,8 @@ const customActions = [
             isIncreasing: false,
             modify: 3,
             onSuccess: false
-        }]
+        }],
+        preventAction: {},
     },
     {
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
@@ -678,6 +683,7 @@ const customActions = [
         memorableThreshold: 3,
         isResource: false,
         resources: [],
+        preventAction: {},
     },
     {
         name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
@@ -709,6 +715,7 @@ const customActions = [
         memorableThreshold: 3,
         isResource: false,
         resources: [],
+        preventAction: {},
     },
     {
         name: ["performance", "dancing", "singing", "jokes"],
@@ -740,6 +747,7 @@ const customActions = [
         memorableThreshold: 3,
         isResource: false,
         resources: [],
+        preventAction: {},
     },
     {
         name: ["first-aid", "medicine", "medical"],
@@ -775,7 +783,8 @@ const customActions = [
             isIncreasing: true,
             modify: 3,
             onSuccess: true
-        }]
+        }],
+        preventAction: {},
     }
 ]
 
@@ -788,7 +797,7 @@ const defaultActions = () => {
     ];
 }
 
-const defaultPlayerYou = {
+let defaultPlayerYou = {
     // The name of the player.
     name: "You",
     // The status of the player.
@@ -889,6 +898,7 @@ const defaultPlayerYou = {
             ],
         },
     ],
+    preventActions: {},
 };
 
 const defaultGame = {
@@ -979,21 +989,24 @@ const tester = (state, text, history, storyCards, info) => {
             return game.players.find(p => p.name === name) || game.players[0];
         }
 
-        const getActionByName = name => {
-            if (game.dynamicActions && name !== "default" && name !== "charisma" && name !== "") {
-                let action = activePlayer.actions.find(a => a.name.includes(name.toLowerCase()));
+        const getActionByName = (player, actionName) => {
+            if (game.dynamicActions && actionName !== "default" && actionName !== "charisma" && actionName !== "") {
+                let action = player.actions.find(a => a.name.includes(actionName.toLowerCase()));
                 if (!action) {
                     // If skill does not exist, create it with default attributes.
                     let names = [];
-                    names.push(name.toLowerCase());
-                    activePlayerName = name;
+                    names.push(actionName.toLowerCase());
+                    activePlayerName = actionName;
                     action = new Action(names);
-                    activePlayer.actions.push(action); // Add the new action to the actions array
+                    player.actions.push(action); // Add the new action to the actions array
                 }
                 return action;
             }
-            return activePlayer.actions.find(a => a.name.includes(name.toLowerCase())) || activePlayer.actions[0];
+            return player.actions.find(a => a.name.includes(actionName.toLowerCase())) || player.actions[0];
         }
+
+
+
 
         /**
          * Determine success or failure of a action
@@ -1002,7 +1015,7 @@ const tester = (state, text, history, storyCards, info) => {
          */
         const determineFate = (action) => {
             //Check if the action is disabled
-            if (Object.values(action.preventAction).includes(true) || Object.values(activePlayer).includes(true)) {
+            if (Object.values(action.preventAction).includes(true) || Object.values(activePlayer.preventActions).includes(true)) {
                 return false;
             }
             const success = Math.random() < action.rate;
@@ -1041,11 +1054,68 @@ const tester = (state, text, history, storyCards, info) => {
         //++++++++++++++++++++++++
         //++++++++++++++++++++++++
 
+        class GameModule {
+            constructor(moduleName) {
+                this.moduleName = moduleName;
+                this.dependencies = []; //Will be used to ensure that a module doesn't execute if its dependency is disabled or doesn't exist
+                this.processingFunctions = [];
+                this.createNew = {};
+                this.edit = {};
+            }
+
+            addDependency(dependencyModuleNames) {
+                this.dependencies.concat(dependencyModuleNames)
+            }
+            addProcessingFunction(processingFunction) {
+                this.processingFunctions.push(processingFunction);
+                state.game.modules.processingArray.push(processingFunction);
+            }
+        }
+        
+        class ModuleSystem {
+            constructor() {
+                this.processingArray = [];
+            }
+
+            /**
+             * 
+             * @param {string} moduleName 
+             */
+            initialize(moduleName) {
+                if (!this[moduleName]) {
+
+                    this[moduleName] = new GameModule(moduleName);
+
+                    //Creates flags for preventing action success
+                    defaultPlayerYou.actions.forEach(currentAction => {
+                        currentAction.preventAction[moduleName] = false;
+                    });
+                    state.game.players.forEach(p => p.actions.forEach(currentAction => {
+                        currentAction.preventAction[moduleName] = false;
+                    }));
+
+                    //Creates flags for preventing player success
+                    defaultPlayerYou.preventActions[moduleName] = false;
+                    state.game.players.forEach(currentPlayer => {
+                        currentPlayer.preventActions[moduleName] = false;
+                    });
+                }
+            }
+
+            callModuleProcessing(isActiveTurn, action, isSuccess) {
+                this.processingArray.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
+            }
+        }
+        
+        if (!state.game.modules) {
+            state.game.modules = new ModuleSystem();
+        }
+        const moduleSystem = state.game.modules;
 
         //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
         //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
         //Arguments go as: (isActiveTurn, action, isSuccess)
-        //All processing functions must account for a case where (action === undefined)
+        //All processing functions using actions must account for a case where (action === undefined)
 
         /**
          * Array for modules that aren't sensitive to the order of processing
@@ -1084,7 +1154,8 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         if (activePlayer.exhaustion.enabled) {
-            moduleProcessingGeneral.push(processPlayerActivity);
+            moduleSystem.initialize('exhaustion');
+            moduleSystem.exhaustion.addProcessingFunction(processPlayerActivity);
         }
 
         // ++++++++++++++++++++++++++++++++++++++++
@@ -1097,7 +1168,7 @@ const tester = (state, text, history, storyCards, info) => {
          * @param {Boolean} isActiveTurn If the turn is active
          * @param {Action} action The action being used actively
          */
-        const processActionsCoolDown = (isActiveTurn, activeAction, isSuccess) => {
+        const processActionsCooldown = (isActiveTurn, activeAction, isSuccess) => {
             game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
             //If an action was supplied
             if (activeAction) {
@@ -1119,27 +1190,18 @@ const tester = (state, text, history, storyCards, info) => {
 
             activePlayer.actions.forEach(currentAction => {
                 if (currentAction.coolDown.remainingTurns > 0) {
-                    currentAction.preventAction.cooldownToggle = true;
+                    currentAction.preventAction.cooldown = true;
                 }
                 else {
-                    currentAction.preventAction.cooldownToggle = false;
+                    currentAction.preventAction.cooldown = false;
                 }
             });
         }
 
-        //Toggle for Action Cooldown module
-        if (true) {
-
-
-            moduleProcessingGeneral.push(processActionsCoolDown);
-
-            //Initialize cooldown toggle for preventing actions. I play to make a class for modules with functions to handle this.
-            state.game.players.forEach(p => p.actions.forEach(currentAction => {
-                if (!currentAction.preventAction.cooldownToggle) {
-                    currentAction.preventAction.cooldownToggle = false;
-                }
-            }));
-        }
+        //Initialize module
+        moduleSystem.initialize('cooldown');
+        moduleSystem.cooldown.addProcessingFunction(processActionsCooldown)
+        
 
         // ++++++++++++++++++++++++++++++++++++++++
         // Player Reputation
@@ -1166,7 +1228,8 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        moduleProcessingLast.push(setPlayerResources);
+        moduleSystem.initialize('playerResources');
+        moduleSystem.playerResources.addProcessingFunction(setPlayerResources);
 
         // ++++++++++++++++++++++++++++++++++++++++
         // Update Player Actions
@@ -1178,7 +1241,10 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        moduleProcessingLast.push(updatePlayerActions);
+        moduleSystem.initialize('updatePlayerActions');
+        moduleSystem.playerResources.addProcessingFunction(updatePlayerActions);
+
+
 
         // ++++++++++++++++++++++++++++++++++++++++
         // End Default Modules (WARNING DO NOT TOUCH)
@@ -1208,21 +1274,21 @@ const tester = (state, text, history, storyCards, info) => {
         const actionParse = () => {
             let isActiveTurn;
             if (isDoAction && !isSpeechAction) {
-                const action = getActionByName((actionMatch[3] || "default"));
+                const action = getActionByName(activePlayer, (actionMatch[3] || "default"));
                 isActiveTurn = true;
                 const isSuccess = determineFate(action);
-                callModuleProcessing(isActiveTurn, action, isSuccess);
+                moduleSystem.callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
                 // If speech is captured
-                const action = getActionByName("charisma");
+                const action = getActionByName(activePlayer, "charisma");
                 isActiveTurn = false;
                 const isSuccess = determineFate(action);
-                callModuleProcessing(isActiveTurn, action, isSuccess);
+                moduleSystem.callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else {
                 isActiveTurn = false;
-                callModuleProcessing(isActiveTurn);
+                moduleSystem.callModuleProcessing(isActiveTurn);
                 return "";  // No relevant action found
             }
         }
