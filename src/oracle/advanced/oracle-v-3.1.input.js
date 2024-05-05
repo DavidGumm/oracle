@@ -1047,13 +1047,16 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         const getActionByName = (player, actionName) => {
-            if (game.dynamicActions && actionName !== "default" && actionName !== "charisma" && actionName !== "") {
+            
+            if (actionName !== "default" && actionName !== "charisma" && actionName !== "") {
                 let action = player.actions.find(a => a.name.includes(actionName.toLowerCase()));
                 if (!action) {
-                    // If skill does not exist, create it with default attributes.
+
+                    if (!actionMatch[3] && game.dynamicActions) {
+                        // If skill does not exist, create it with default attributes.
                     let names = [];
                     names.push(actionName.toLowerCase());
-                    activePlayerName = actionName;
+                    
                     action = new Action(names);
                     player.actions.push(action); // Add the new action to the actions array
 
@@ -1062,6 +1065,15 @@ const tester = (state, text, history, storyCards, info) => {
                     formatGrammar(player.name, action.failureStart);
                     formatGrammar(player.name, action.coolDownPhrase);
                     action.successEndings.forEach(currPhrase => currPhrase = formatGrammar(player.name, currPhrase))
+                    }
+                    return player.actions[0];
+                }
+                //Action Exists
+                if (actionName === "move" || actionName === "moving") {
+                    //If the movement word is refering to the player
+                    if (actionMatch[5]) {
+                        return player.actions[0];
+                    }
                 }
                 return action;
             }
@@ -1102,11 +1114,11 @@ const tester = (state, text, history, storyCards, info) => {
 
         const game = new Game(state.game);
 
-        const actionMatch = text.match(/> (.*) ((?:try|tries|attempt|attempts) (?:to use (.*) to |to )|(?:say|says) ("(?:[^"]+)"))/i);
+        const actionMatch = text.match(/> (\w*) ((?:try|tries|attempt|attempts) (?:(?:(to use)|\bto\b)? ?(\w*) ?(a|the|it|him|his|her)?)?|(?:say|says) ("(?:[^"]+)")|(@))/i);
 
         let activePlayerName = actionMatch ? actionMatch[1] : null;
-        const isDoAction = actionMatch ? actionMatch[3] || (!actionMatch[4] && actionMatch) : null;
-        const isSpeechAction = actionMatch ? actionMatch[4] !== undefined : null;
+        const isDoAction = actionMatch ? actionMatch[4] !== undefined : null;
+        const isSpeechAction = actionMatch ? actionMatch[6] !== undefined : null;
 
         const activePlayer = getPlayerByName(activePlayerName);
 
@@ -1327,7 +1339,7 @@ const tester = (state, text, history, storyCards, info) => {
         const actionParse = () => {
             let isActiveTurn;
             if (isDoAction && !isSpeechAction) {
-                const action = getActionByName(activePlayer, (actionMatch[3] || "default"));
+                const action = getActionByName(activePlayer, (actionMatch[4]));
                 isActiveTurn = true;
                 const isSuccess = determineFate(action);
                 moduleSystem.callModuleProcessing(isActiveTurn, action, isSuccess);
