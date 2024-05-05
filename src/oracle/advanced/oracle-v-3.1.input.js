@@ -1052,7 +1052,7 @@ const tester = (state, text, history, storyCards, info) => {
                 let action = player.actions.find(a => a.name.includes(actionName.toLowerCase()));
                 if (!action) {
 
-                    if (!actionMatch[3] && game.dynamicActions) {
+                    if (!dynamicActionPossible && game.dynamicActions) {
                         // If skill does not exist, create it with default attributes.
                     let names = [];
                     names.push(actionName.toLowerCase());
@@ -1119,6 +1119,7 @@ const tester = (state, text, history, storyCards, info) => {
         let activePlayerName = actionMatch ? actionMatch[1] : null;
         const isDoAction = actionMatch ? actionMatch[4] !== undefined : null;
         const isSpeechAction = actionMatch ? actionMatch[6] !== undefined : null;
+        const dynamicActionPossible = actionMatch ? actionMatch[3] !== undefined : null;
 
         const activePlayer = getPlayerByName(activePlayerName);
 
