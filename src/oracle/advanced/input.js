@@ -126,6 +126,39 @@ const formatGrammar = (playerName, stringToFormat) => {
     return stringToFormat.replace(/(?:^|(?:[:.!?]\s))(.{1})/g, char => char.toUpperCase()).trim();
 }
 
+const convertVerbTense = (verb) => {
+    
+    //Attempt matching by converting present particibe verb to base form
+    if (verb.endsWith("ing")) {
+        if (verb.length >= 7 && verb.match(/[^aeiou][aeiou][^aeiou]{2}ing\b/)) {
+            verb = verb.slice(0, -4);
+        }
+        else if (verb.length >= 6) {
+            verb = verb.slice(0, -3);
+        }
+
+    }
+
+    //Attempt matching by converting base form verb to present particible form
+    else {
+        //Attempt silent "e" rule
+        if (verb.match(/(?<!e)e\b$/)) {
+            verb = verb.replace(/(?<!e)e\b$/, "");
+        }
+
+        //Attempt C-V-C rule
+        else {
+            const cvcMatch = verb.match(/[^aeiou][aeiou]([^aeiouwxy]{0,1})$/);
+            const letterToAppend = cvcMatch ? cvcMatch[1] !== undefined : false;
+            if (letterToAppend) {
+                verb = verb.concat(cvcMatch[1]);
+            }
+        }
+        verb = verb.concat("ing");
+    }
+    return verb;
+}
+
 
 
 /**
@@ -509,7 +542,7 @@ class Player {
 
 class Game {
     constructor(game) {
-        this.dynamicActions = game.dynamicActions;
+        this.enableDynamicActions = game.enableDynamicActions;
         this.enableReputationSystem = game.enableReputationSystem;
         this.enableSayCharismaCheck = game.enableSayCharismaCheck;
         this.isDynamicPlayersEnabled = game.isDynamicPlayersEnabled;
@@ -963,7 +996,7 @@ let defaultPlayerYou = {
 
 const defaultGame = {
     // Enable dynamically added actions.
-    dynamicActions: false,
+    enableDynamicActions: false,
     // The action rate configuration.
     actionRate: defaultActionRate,
     // Enable the reputation system.
@@ -1050,16 +1083,25 @@ const oracle = () => {
 
     const getActionByName = (player, actionName) => {
         
-        if (actionName !== "default" && actionName !== "charisma" && actionName !== "") {
-            let action = player.actions.find(a => a.name.includes(actionName.toLowerCase()));
-            if (!action) {
+        //An action name was supplied
+        if (actionName !== "") {
 
-                if (!dynamicActionPossible && game.dynamicActions) {
-                    // If skill does not exist, create it with default attributes.
-                let names = [];
-                names.push(actionName.toLowerCase());
+            let action = player.actions.find(a => a.name.includes(actionName.toLowerCase()));
+
+            //Check by converting between base verb form "admit", and present particible form "admitting"
+            let newActionName = convertVerbTense(actionName);
+            if (!action) {
+                action = player.actions.find(a => a.name.includes(newActionName.toLowerCase()));
+                if (action) {
+                    actionName = newActionName;
+                }
+            }
+
+            //Create dynamic action
+            if (!action && dynamicActionPossible && game.enableDynamicActions) {
                 
-                action = new Action(names);
+                action = new Action(defaultAction);
+                action.name = [actionName.toLowerCase()];
                 player.actions.push(action); // Add the new action to the actions array
 
                 //Format all grammatical placeholders in the new action
@@ -1067,19 +1109,22 @@ const oracle = () => {
                 formatGrammar(player.name, action.failureStart);
                 formatGrammar(player.name, action.coolDownPhrase);
                 action.successEndings.forEach(currPhrase => currPhrase = formatGrammar(player.name, currPhrase))
-                }
-                return player.actions[0];
+                return action;
             }
-            //Action Exists
+
+            //Use default action if the player is moving something, i.e. not moving themselves.
             if (actionName === "move" || actionName === "moving") {
                 //If the movement word is refering to the player
-                if (actionMatch[5]) {
+                if (!actionRefersToPlayer) {
                     return player.actions[0];
                 }
             }
-            return action;
+
+            return action || player.actions[0];
+            
         }
-        return player.actions.find(a => a.name.includes(actionName.toLowerCase())) || player.actions[0];
+        //If no action name was supplied just return default action
+        return player.actions[0];
     }
 
 
@@ -1119,9 +1164,10 @@ const oracle = () => {
     const actionMatch = text.match(/> (\w*) ((?:try|tries|attempt|attempts) (?:(?:(to use)|\bto\b)? ?(\w*) ?(a|the|it|him|his|her)?)?|(?:say|says) ("(?:[^"]+)")|(@))/i);
 
     let activePlayerName = actionMatch ? actionMatch[1] : null;
-    const isDoAction = actionMatch ? actionMatch[4] !== undefined : null;
-    const isSpeechAction = actionMatch ? actionMatch[6] !== undefined : null;
-    const dynamicActionPossible = actionMatch ? actionMatch[3] !== undefined : null;
+    const isDoAction = actionMatch ? actionMatch[4] !== undefined : false;
+    const isSpeechAction = actionMatch ? actionMatch[6] !== undefined : false;
+    const dynamicActionPossible = actionMatch ? actionMatch[3] !== undefined : false;
+    const actionRefersToPlayer = actionMatch ? actionMatch[5] === undefined : false;
 
     const activePlayer = getPlayerByName(activePlayerName);
 

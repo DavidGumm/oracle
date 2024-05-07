@@ -200,6 +200,25 @@ for (let index = 0; index < loops; index++) {
         expect(results.info).toMatchObject(info);
     });
 
+
+    test("Test dynamic action", () => {
+        const text = "> You try to use dragonfire to burn something.";
+        const results = tester(state, text, history, storyCards, info);
+        //expect(results.state).toMatchObject(state);
+        expect(results.state.memory.frontMemory).toMatch(frontMemoryDefaultMatch);
+        if (results.state.game.enableDynamicActions) {
+            expect(results.state.game.players[0].actions[7].name.includes("dragonfire")).toBe(true);
+        }
+        else {
+            expect(results.state.game.players[0].actions[7]).toBe(undefined);
+        }
+        expect(results.state.memory.authorsNote.includes(game.authorsNote)).toBe(true);
+        expect(results.text).toBe(text);
+        expect(results.history).toMatchObject(history);
+        expect(results.storyCards).toMatchObject(storyCards);
+        expect(results.info).toMatchObject(info);
+    });
+
     test("Test none action", () => {
         const text = "I move the rock.";
         const results = tester(state, text, history, storyCards, info);
