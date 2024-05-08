@@ -157,6 +157,27 @@ const convertVerbTense = (verb) => {
 }
 
 
+/**
+ * Get the highest-priority override value for a specific key, otherwise return original key
+ * @param {Object} overrides - The overrides object containing module-specific overrides.
+ * @param {String} key - The key for which to retrieve the override value.
+ * @param {String} moduleName - The name of the module.
+ */
+function checkForOverride(parent, key) {
+    if (parent.overrides && parent.overrides[key] && parent.overrides[key].length > 0) {
+
+        const override = parent.overrides[key];
+        if (override) {
+            override.sort((a, b) => parseInt(b.priority) - parseInt(a.priority));
+        }
+        return override[0].data;
+    }
+    else {
+        return parent[key];
+    }
+}
+
+
 
 /**
  * The starting action rates.
@@ -380,6 +401,7 @@ class Action {
         this.isResource = action.isResource;
         this.resources = action.resources.map(r => new ActionResource(r));
         this.preventAction = action.preventAction;
+        this.overrides = action.overrides;
     }
 
     /**
@@ -390,8 +412,8 @@ class Action {
      */
     getPhrase(isSuccess, activePlayerName) {
         const note = this.note !== "" ? ` [${this.name[0]} Action Note: ${this.note}]` : "";
-        const phraseEnding = getRandomItem(isSuccess ? this.successEndings : this.failureEndings);
-        const message = isSuccess ? `Success! ${this.successStart} ${phraseEnding}` : `Fail! ${this.failureStart} ${phraseEnding}`;
+        const phraseEnding = getRandomItem(isSuccess ? checkForOverride(this, 'successEndings') : checkForOverride(this, 'failureEndings'));
+        const message = isSuccess ? `Success! ${checkForOverride(this, 'successStart')} ${phraseEnding}` : `Fail! ${checkForOverride(this, 'failureStart')} ${phraseEnding}`;
         return formatGrammar(activePlayerName, message);
     }
     /**
@@ -665,6 +687,7 @@ const defaultAction = {
     // The resource the action affects.
     resources: [],
     preventAction: {},
+    overrides: {},
 };
 
 // Feel free to change the values below to customize the default charisma action but only the text values except for the name charisma.
@@ -699,6 +722,42 @@ const defaultCharismaAction = {
     isResource: false,
     resources: [],
     preventAction: {},
+    overrides: {},
+};
+
+// Feel free to change the values below to customize the default charisma action but only the text values except for the name charisma.
+const testingAction = {
+    name: ["testing", "test"],
+    successEndings: ["original success ending."],
+    failureEndings: ["original failure ending."],
+    successStart: "Original success start,",
+    failureStart: "Original failure start",
+    coolDownPhrase: "original cooldown phrase",
+    note: "",
+    rate: 1,
+    leveling: {
+        increaseEnabled: false,
+        decreaseEnabled: false,
+        maxRate: 1,
+        minRate: 0,
+        rateOfChange: 0.01,
+        rateOfChangeFailureMultiplier: 10,
+        decreaseRate: 0.001 / 6
+    },
+    coolDown: {
+        enabled: false,
+        decreaseRatePerAction: 1,
+        failureThreshold: 3,
+        failureCount: 0,
+        remainingTurns: 0,
+    },
+    memorable: true,
+    knownFor: "a skilled linguist",
+    memorableThreshold: 3,
+    isResource: false,
+    resources: [],
+    preventAction: {},
+    overrides: {},
 };
 
 // Custom actions is an array of actions that can be added to the game. Define as many as you like, but make sure to lower the decreaseRate in the leveling object to match the number of actions including the charisma action but not the default action.
@@ -742,6 +801,7 @@ const customActions = [
             onSuccess: false
         }],
         preventAction: {},
+        overrides: {},
     },
     {
         name: ["movement", "move", "running", "jumping", "dodge", "agility", "muscle memory", "leap", "leaping", "sneak", "stealth", "climb", "climbing", "parry", "escape", "free yourself", "maneuver", "duck"],
@@ -774,6 +834,7 @@ const customActions = [
         isResource: false,
         resources: [],
         preventAction: {},
+        overrides: {},
     },
     {
         name: ["observe", "look", "watch", "inspect", "investigate", "examine", "listening", "hearing", "smell", "intuition", "analyze", "analysis", "deduce", "deduction", "decode", "assess", "sniff", "scent"],
@@ -806,6 +867,7 @@ const customActions = [
         isResource: false,
         resources: [],
         preventAction: {},
+        overrides: {},
     },
     {
         name: ["performance", "dancing", "singing", "jokes"],
@@ -838,6 +900,7 @@ const customActions = [
         isResource: false,
         resources: [],
         preventAction: {},
+        overrides: {},
     },
     {
         name: ["first-aid", "medicine", "medical"],
@@ -875,6 +938,7 @@ const customActions = [
             onSuccess: true
         }],
         preventAction: {},
+        overrides: {},
     }
 ]
 
@@ -883,7 +947,8 @@ const defaultActions = () => {
     return [
         defaultAction,
         defaultCharismaAction,
-        ...customActions
+        ...customActions,
+        testingAction,
     ];
 }
 
@@ -1176,27 +1241,119 @@ const tester = (state, text, history, storyCards, info) => {
         //++++++++++++++++++++++++
         //++++++++++++++++++++++++
 
+
+        class Override {
+            constructor(moduleName, ID, priority, data) {
+                this.module = moduleName;
+                this.ID = ID;
+                this.priority = priority;
+                this.data = data;
+            }
+        }
+
         class GameModule {
             constructor(moduleName) {
                 this.moduleName = moduleName;
                 this.dependencies = []; //Will be used to ensure that a module doesn't execute if its dependency is disabled or doesn't exist
                 this.processingFunctions = [];
-                this.createNew = {};
-                this.edit = {};
+                this.overrides = {};
             }
 
-            addDependency(dependencyModuleNames) {
-                this.dependencies.concat(dependencyModuleNames)
+            /**
+             * @param {string} dependencyName 
+             */
+            addDependency(dependencyName) {
+                this.dependencies.push(dependencyName)
             }
+
             addProcessingFunction(processingFunction) {
                 this.processingFunctions.push(processingFunction);
                 state.game.modules.processingArray.push(processingFunction);
+            }
+            
+            createDataOverride(object, key, data, priority, ID) {
+                if (!object.overrides ) {
+                    throw new Error(`Error: This object cannot have its data overwriten!`);
+                } else if (!object[key]) {
+                    throw new Error(`Error: Object does not exist!`);
+                } else if (!object.overrides[key]) {
+                    throw new Error(`Error: This object key cannot have its data overwriten!`)
+                } else if (typeof data !== typeof object[key]) {
+                    throw new Error(`Error: Data is not the same type as what is being overwritten!`);
+                }
+
+                object.overrides[key].push(
+                    new Override(this.moduleName, ID, priority, data)
+                );
+            }
+            
+        
+            editDataOverrideByID(object, key, data, ID) {
+                if (!object.overrides ) {
+                    throw new Error(`Error: This object cannot have its data overwriten!`);
+                   } else if (!object[key]) {
+                    throw new Error(`Error: Object does not exist!`);
+                } else if (!object.overrides[key]) {
+                    throw new Error(`Error: This object key cannot have its data overwriten!`);
+                } else if (typeof data !== typeof object[key]) {
+                    throw new Error(`Error: Data is not the same type as what is being overwritten!`);
+                }
+                
+        
+                const overrideToEdit = object.overrides[key].find(currOverride => currOverride.ID === ID);
+                overrideToEdit.data = data;
+                if (!overrideToEdit) {
+                    throw new Error(`Error: Override ID not found!`);
+                }
+            }
+            
+            /**
+             * Delete all module overrides in a given object
+             * @param {*} object 
+             * @param {*} key 
+             */
+            deleteAllDataOverrides(object, key) {
+                if (object.overrides && object.overrides[key]) {
+        
+                    //Remove only the override whose module key matches this modules name
+                    object.overrides[key] = object.overrides[key].filter(currOverride => currOverride.module !== this.moduleName);
+                }
+            }
+        
+            /**
+             * Delete an override by ID for a given object
+             * @param {*} object 
+             * @param {*} key 
+             * @param {*} ID 
+             */
+            deleteDataOverrideByID(object, key, ID) {
+                if (object.overrides && object.overrides[key]) {
+        
+                    //Remove only the override whose module key matches this modules name
+                    object.overrides[key] = object.overrides[key].filter(currOverride => currOverride.ID !== ID);
+                }
             }
         }
         
         class ModuleSystem {
             constructor() {
                 this.processingArray = [];
+
+                //In player actions
+                state.game.players.forEach(p => p.actions.forEach(currentAction => {
+                    //Initialize preventAction flag system
+                    if (!currentAction.preventAction) {
+                        currentAction.preventAction
+                    }
+                    //Initialize override system
+                    if (!currentAction.overrides) {
+                        currentAction.overrides;
+                    }
+                    currentAction.overrides.successStart = [];
+                    currentAction.overrides.successEndings = [];
+                    currentAction.overrides.failureStart = [];
+                    currentAction.overrides.failureEndings = [];
+                }));
             }
 
             /**
@@ -1232,7 +1389,7 @@ const tester = (state, text, history, storyCards, info) => {
         if (!state.game.modules) {
             state.game.modules = new ModuleSystem();
         }
-        const moduleSystem = state.game.modules;
+        const modules = state.game.modules;
 
         //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
         //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
@@ -1276,8 +1433,8 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         if (activePlayer.exhaustion.enabled) {
-            moduleSystem.initialize('exhaustion');
-            moduleSystem.exhaustion.addProcessingFunction(processPlayerActivity);
+            modules.initialize('exhaustion');
+            modules.exhaustion.addProcessingFunction(processPlayerActivity);
         }
 
         // ++++++++++++++++++++++++++++++++++++++++
@@ -1321,8 +1478,8 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         //Initialize module
-        moduleSystem.initialize('cooldown');
-        moduleSystem.cooldown.addProcessingFunction(processActionsCooldown)
+        modules.initialize('cooldown');
+        modules.cooldown.addProcessingFunction(processActionsCooldown)
         
 
         // ++++++++++++++++++++++++++++++++++++++++
@@ -1350,8 +1507,8 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        moduleSystem.initialize('playerResources');
-        moduleSystem.playerResources.addProcessingFunction(setPlayerResources);
+        modules.initialize('playerResources');
+        modules.playerResources.addProcessingFunction(setPlayerResources);
 
         // ++++++++++++++++++++++++++++++++++++++++
         // Update Player Actions
@@ -1363,8 +1520,28 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        moduleSystem.initialize('updatePlayerActions');
-        moduleSystem.playerResources.addProcessingFunction(updatePlayerActions);
+        modules.initialize('updatePlayerActions');
+        modules.playerResources.addProcessingFunction(updatePlayerActions);
+
+
+        // ++++++++++++++++++++++++++++++++++++++++
+        // Testing Module
+        // ++++++++++++++++++++++++++++++++++++++++
+
+        modules.initialize('test');
+        
+        //Testing module, currently disabled
+        const testModule = (isActiveTurn, action, isSuccess) => {
+            if (true && action && action.name[0] === "testing") {
+                //Will change the current actions success to "Your action" with an override priority of 1 (a priority of 2 would outweight this override)
+                modules.test.createDataOverride(action, 'successStart', "Modified success start,", 1, 'testingID'); 
+                //Will result in an error because action.rate is not currently supported by overrides
+                //modules.test.createDataOverride(action, 'rate', ["was altered by a test!"], 1, 'testingID'); 
+            }
+        }
+        modules.test.addProcessingFunction(testModule);
+        
+        
 
 
 
@@ -1389,18 +1566,18 @@ const tester = (state, text, history, storyCards, info) => {
                 const action = getActionByName(activePlayer, (actionMatch[4]));
                 isActiveTurn = true;
                 const isSuccess = determineFate(action);
-                moduleSystem.callModuleProcessing(isActiveTurn, action, isSuccess);
+                modules.callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else if (isSpeechAction && game.enableSayCharismaCheck) {
                 // If speech is captured
                 const action = getActionByName(activePlayer, "charisma");
                 isActiveTurn = false;
                 const isSuccess = determineFate(action);
-                moduleSystem.callModuleProcessing(isActiveTurn, action, isSuccess);
+                modules.callModuleProcessing(isActiveTurn, action, isSuccess);
                 return action.getPhrase(isSuccess, activePlayerName);
             } else {
                 isActiveTurn = false;
-                moduleSystem.callModuleProcessing(isActiveTurn);
+                modules.callModuleProcessing(isActiveTurn);
                 return "";  // No relevant action found
             }
         }
