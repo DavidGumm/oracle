@@ -12,7 +12,7 @@
 
 /**
  * Gets a random item from an array.
- * @param {[]} arr An array of items.
+ * @param {Array} arr An array of items.
  * @returns A random item from the array or null if the array is empty.
  */
 const getRandomItem = (arr) => {
@@ -21,7 +21,7 @@ const getRandomItem = (arr) => {
 
 /**
  * Gets the next item in the array.
- * @param {[]} arr Array of items.
+ * @param {Array} arr Array of items.
  * @param {Number} currentIndex The current index.
  * @returns The next item in the array.
  */
@@ -45,7 +45,7 @@ const getNextItem = (arr, currentIndex) => {
  * Accounts for only a lower bound
  * @param {Number} number number to check
  * @param {Number} lowerBound
- * @returns Adjusted number
+ * 
  */
 const checkWithinBounds = (number, lowerBound, upperBound) => {
     if (upperBound === undefined) {
@@ -159,11 +159,10 @@ const convertVerbTense = (verb) => {
 
 /**
  * Get the highest-priority override value for a specific key, otherwise return original key
- * @param {Object} overrides - The overrides object containing module-specific overrides.
- * @param {String} key - The key for which to retrieve the override value.
- * @param {String} moduleName - The name of the module.
+ * @param {Object} parent - The key for which to retrieve the override value.
+ * @param {String} key - The name of the module.
  */
-function checkForOverride(parent, key) {
+const checkForOverride = (parent, key) => {
     if (parent.overrides && parent.overrides[key] && parent.overrides[key].length > 0) {
 
         const override = parent.overrides[key];
@@ -214,9 +213,9 @@ class EventSystem {
      * Represents a constructor for the event system.
      * @param {Object} eventSystem - The event system object.
      * @param {String} eventSystem.name - The name of the event system.
-     * @param {Array} eventSystem.events - The events associated with the event system.
+     * @param {EventType[]} eventSystem.events - The events associated with the event system.
      * @param {Number} eventSystem.chance - The chance of an event changing.
-     * @param {Number} eventSystem.current - The current event.
+     * @param {EventType} eventSystem.current - The current event.
      * @param {String} eventSystem.description - The description of the event system.
      * @param {Boolean} eventSystem.isRandom - Indicates if events are chosen randomly or in sequence.
      */
@@ -235,14 +234,14 @@ class EventSystem {
         if (chance < this.chance) {
             if (this.isRandom) {
                 const random = Math.random();
-                this.events.forEach(e => {
-                    if (random < e.chance) {
-                        this.current = e;
-                        this.description = e.description;
+                this.events.forEach(currEvent => {
+                    if (random < currEvent.chance) {
+                        this.current = currEvent;
+                        this.description = currEvent.description;
                     }
                 });
             } else {
-                this.current = getNextItem(this.events, this.events.indexOf(e => e.description === this.current.description));
+                this.current = getNextItem(this.events, this.events.findIndex(currEvent => currEvent.description === this.current.description));
             }
         }
     }
@@ -1130,7 +1129,7 @@ const tester = (state, text, history, storyCards, info) => {
     // The Oracle of Delphi is a game engine that adds a new level of depth to AI Dungeon.
     // DO NOT CHANGE ANYTHING BELOW THIS LINE!
     const oracle = () => {
-        const getPlayerByName = name => {
+        const getPlayerByName = (name) => {
             if (game.isDynamicPlayersEnabled && name !== "" && name !== null) {
                 let player = game.players.find(p => p.name === name);
                 if (!player) {
@@ -1220,8 +1219,11 @@ const tester = (state, text, history, storyCards, info) => {
             state.memory.frontMemory = "";
         }
 
-        delphicBase(false);
+        delphicBase();
 
+        /**
+         * @type Game
+         */
         const game = new Game(state.game);
 
         const actionMatch = text.match(/> (\w*) ((?:try|tries|attempt|attempts) (?:(?:(to use)|\bto\b)? ?(\w*) ?(a|the|it|him|his|her)?)?|(?:say|says) ("(?:[^"]+)")|(@))/i);
@@ -1233,13 +1235,6 @@ const tester = (state, text, history, storyCards, info) => {
         const actionRefersToPlayer = actionMatch ? actionMatch[5] === undefined : false;
 
         const activePlayer = getPlayerByName(activePlayerName);
-
-
-        //++++++++++++++++++++++++
-        //++++++++++++++++++++++++
-        // START MODULE PROCESSING
-        //++++++++++++++++++++++++
-        //++++++++++++++++++++++++
 
 
         class Override {
@@ -1256,22 +1251,40 @@ const tester = (state, text, history, storyCards, info) => {
                 this.moduleName = moduleName;
                 this.dependencies = []; //Will be used to ensure that a module doesn't execute if its dependency is disabled or doesn't exist
                 this.processingFunctions = [];
-                this.overrides = {};
+
+                //Creates flags for preventing action success
+                defaultPlayerYou.actions.forEach(currentAction => {
+                    currentAction.preventAction[moduleName] = false;
+                });
+                state.game.players.forEach(p => p.actions.forEach(currentAction => {
+                    currentAction.preventAction[moduleName] = false;
+                }));
+
+                //Creates flags for preventing player success
+                defaultPlayerYou.preventActions[moduleName] = false;
+                state.game.players.forEach(currentPlayer => {
+                    currentPlayer.preventActions[moduleName] = false;
+                });
             }
 
             /**
-             * @param {string} dependencyName 
+             * Adds another module this module is dependant on.
+             * @param {String} dependencyName
              */
             addDependency(dependencyName) {
                 this.dependencies.push(dependencyName)
             }
 
+            /**
+             * Adds a new function to the processing array
+             * @param {Function} processingFunction
+             */
             addProcessingFunction(processingFunction) {
                 this.processingFunctions.push(processingFunction);
                 state.game.modules.processingArray.push(processingFunction);
             }
             
-            createDataOverride(object, key, data, priority, ID) {
+            createPhraseOverride(object, key, data, priority, ID) {
                 if (!object.overrides ) {
                     throw new Error(`Error: This object cannot have its data overwriten!`);
                 } else if (!object[key]) {
@@ -1356,55 +1369,36 @@ const tester = (state, text, history, storyCards, info) => {
                 }));
             }
 
-            /**
-             * 
-             * @param {string} moduleName 
-             */
-            initialize(moduleName) {
-                if (!this[moduleName]) {
-
-                    this[moduleName] = new GameModule(moduleName);
-
-                    //Creates flags for preventing action success
-                    defaultPlayerYou.actions.forEach(currentAction => {
-                        currentAction.preventAction[moduleName] = false;
-                    });
-                    state.game.players.forEach(p => p.actions.forEach(currentAction => {
-                        currentAction.preventAction[moduleName] = false;
-                    }));
-
-                    //Creates flags for preventing player success
-                    defaultPlayerYou.preventActions[moduleName] = false;
-                    state.game.players.forEach(currentPlayer => {
-                        currentPlayer.preventActions[moduleName] = false;
-                    });
-                }
-            }
 
             callModuleProcessing(isActiveTurn, action, isSuccess) {
                 this.processingArray.forEach(currentFunction => { currentFunction.apply(null, [isActiveTurn, action, isSuccess]) });
             }
         }
-        
+
         if (!state.game.modules) {
             state.game.modules = new ModuleSystem();
         }
+
+        /**
+        * @typedef {ModuleSystem & { [moduleName: string]: GameModule }} GameModules
+        * @type GameModules
+        */
         const modules = state.game.modules;
 
-        //Please note: all these functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
-        //This moduleProcessing function is only for testing purposes, and will be replaced with an array.
-        //Arguments go as: (isActiveTurn, action, isSuccess)
-        //All processing functions using actions must account for a case where (action === undefined)
 
-        /**
-         * Array for modules that aren't sensitive to the order of processing
-         */
-        let moduleProcessingGeneral = [];
+        //++++++++++++++++++++++++
+        //++++++++++++++++++++++++
+        // START MODULE PROCESSING
+        //++++++++++++++++++++++++
+        //++++++++++++++++++++++++
 
-        /**
-         * Array for modules that must be called after the general processing is complete
-         */
-        let moduleProcessingLast = [];
+
+
+        // Please note: all these processing functions must pass arguments in order. If a function doesn't need a parameter, it will simply be ignored when the function is called.
+        // This moduleProcessing function is only for testing purposes, and will be replaced with an array.
+        // Arguments go as: (isActiveTurn, action, isSuccess)
+        // All processing functions using actions must account for a case where (action === undefined)
+
 
         // ++++++++++++++++++++++++++++++++++++++++
         // Default Modules (WARNING DO NOT TOUCH)
@@ -1417,7 +1411,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         /**
          * Logic for handling the player exhaustion.
-         * @param {Boolean} active If the player turn is an active one.
+         * @param {Boolean} isActiveTurn If the player turn is an active one.
          */
         const processPlayerActivity = (isActiveTurn) => {
             if (isActiveTurn) {
@@ -1433,7 +1427,7 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         if (activePlayer.exhaustion.enabled) {
-            modules.initialize('exhaustion');
+            modules.exhaustion = new GameModule('exhaustion');
             modules.exhaustion.addProcessingFunction(processPlayerActivity);
         }
 
@@ -1443,9 +1437,10 @@ const tester = (state, text, history, storyCards, info) => {
 
 
         /**
-         * Process all the actions providing an update to each non active action.
-         * @param {Boolean} isActiveTurn If the turn is active
-         * @param {Action} action The action being used actively
+         * Processing function for action cooldown
+         * @param {Boolean} isActiveTurn 
+         * @param {Action} activeAction 
+         * @param {Boolean} isSuccess 
          */
         const processActionsCooldown = (isActiveTurn, activeAction, isSuccess) => {
             game.players.filter(p => p.name !== activePlayerName).map(p => p.actions.forEach(a => a.coolDown.decrease()));
@@ -1478,7 +1473,7 @@ const tester = (state, text, history, storyCards, info) => {
         }
 
         //Initialize module
-        modules.initialize('cooldown');
+        modules.cooldown = new GameModule('cooldown');
         modules.cooldown.addProcessingFunction(processActionsCooldown)
         
 
@@ -1489,13 +1484,13 @@ const tester = (state, text, history, storyCards, info) => {
         const processReputation = (isActiveTurn, action, isSuccess) => {
             if (action) {
                 if (isSuccess && game.enableReputationSystem && (Math.random() < action.memorable)) {
-                    activePlayer.actionHistory.push(new ActionHistory(action.name[0], info.actionCount));
+                    activePlayer.actionHistory.push( { name: action.name[0], actionCount: info.actionCount });
                     activePlayer.actionHistory = activePlayer.actionHistory.filter(ah => ah.actionCount > Math.max(0, info.actionCount - 50))
                 }
             }
         }
 
-        //moduleProcessingGeneral.push(processReputation);
+        
 
         // ++++++++++++++++++++++++++++++++++++++++
         // Update Player Resources
@@ -1507,7 +1502,7 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        modules.initialize('playerResources');
+        modules.playerResources = new GameModule('playerResources');
         modules.playerResources.addProcessingFunction(setPlayerResources);
 
         // ++++++++++++++++++++++++++++++++++++++++
@@ -1520,25 +1515,25 @@ const tester = (state, text, history, storyCards, info) => {
             }
         }
 
-        modules.initialize('updatePlayerActions');
+        modules.updatePlayerAction = new GameModule('updatePlayerActions');
         modules.playerResources.addProcessingFunction(updatePlayerActions);
 
 
         // ++++++++++++++++++++++++++++++++++++++++
         // Testing Module
         // ++++++++++++++++++++++++++++++++++++++++
-
-        modules.initialize('test');
-        
-        //Testing module, currently disabled
-        const testModule = (isActiveTurn, action, isSuccess) => {
+    
+            const testModule = (isActiveTurn, action, isSuccess) => {
             if (true && action && action.name[0] === "testing") {
                 //Will change the current actions success to "Your action" with an override priority of 1 (a priority of 2 would outweight this override)
-                modules.test.createDataOverride(action, 'successStart', "Modified success start,", 1, 'testingID'); 
-                //Will result in an error because action.rate is not currently supported by overrides
+                modules.test.createPhraseOverride(action, 'successStart', "Modified success start,", 1, 'testingID'); 
+                
+                //Will result in an error because action.rate is not supported by overrides
                 //modules.test.createDataOverride(action, 'rate', ["was altered by a test!"], 1, 'testingID'); 
             }
         }
+
+        modules.test = new GameModule('test');
         modules.test.addProcessingFunction(testModule);
         
         
@@ -1558,7 +1553,6 @@ const tester = (state, text, history, storyCards, info) => {
 
         /**
          * The action command parse for use as command parse and entry point.
-         * @param {String} text The user imputed text.
          */
         const actionParse = () => {
             let isActiveTurn;
@@ -1641,7 +1635,7 @@ const tester = (state, text, history, storyCards, info) => {
             ...getEventSystem(),
             ...getResourceThresholds(),
             game.authorsNote,
-        ].filter(e = e => e !== "").join(" ").trim();
+        ].filter(e => e !== "").join(" ").trim();
 
         // Notify the player of the status.
         if (game.enablePlayerMessage) {
@@ -1655,4 +1649,40 @@ const tester = (state, text, history, storyCards, info) => {
 
     return { state, text, history, storyCards, info }
 }
+
+
+// Quick Testing section ////////////////////////
+/*
+const state = {
+    memory: { context: "This is the memory", authorsNote: "This is the authors note" },
+    game: new Game(defaultGame),
+};
+const history = [
+    {
+        text: "A first history line",
+        type: "story",
+        rawText: "A first history line"
+    },
+    {
+        text: "A second history line",
+        type: "story",
+        rawText: "A second history line"
+    }
+];
+const storyCards = [{ id: "1", keys: "exampleKey", entry: "exampleEntry", type: "exampleType" }];
+const info = {
+    actionCount: 1,
+    characters: ["character1", "character2"]
+};
+
+
+const inputText = "> You try to test to defeat them."
+const output = tester(state, inputText, history, storyCards, info);
+
+console.log(`\n\nOutput: ${output.state.memory.frontMemory}\n\n`);
+*/
+
+
+
+
 module.exports = { tester, getRandomItem, getNextItem, checkWithinBounds, startingActionRate, Game, Player, CoolDown, Resource, Action, ActionHistory, EventSystem, Exhaustion, Threat, ActionRate, defaultActions, defaultPlayerYou, defaultGame, defaultAction, defaultCharismaAction, customActions };
