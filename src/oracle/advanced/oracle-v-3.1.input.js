@@ -361,11 +361,12 @@ class ResourceThreshold {
 class Resource {
     constructor(resource) {
         this.type = resource.type;
-        this.isIncreased = resource.isIncreased;
+        this.naturalRateOfChange = resource.naturalRateOfChange;
         this.value = resource.value;
         this.max = resource.max;
         this.min = resource.min;
-        this.rate = resource.rate;
+        this.increaseEnabled = resource.increaseEnabled;
+        this.decreaseEnabled = resource.decreaseEnabled;
         this.isCritical = resource.isCritical;
         this.isConsumable = resource.isConsumable;
         this.isRenewable = resource.isRenewable;
@@ -376,9 +377,8 @@ class Resource {
 class ActionResource {
     constructor(actionResource) {
         this.type = actionResource.type;
-        this.isIncreasing = actionResource.isIncreasing;
-        this.onSuccess = actionResource.onSuccess;
-        this.modify = actionResource.modify;
+        this.changeOnSuccess = actionResource.changeOnSuccess;
+        this.changeOnFail = actionResource.changeOnFail;
     }
 }
 
@@ -533,28 +533,57 @@ class Player {
     }
 
     getResourceThresholds() {
-        return this.resources.map(r => r.thresholds.find(t => r.value <= t.threshold)).filter(e => e).map(e => e.message);
+        return this.resources.map(currResource => currResource.thresholds.find(currThreshold => currResource.value <= currThreshold.threshold)).filter(e => e).map(e => e.message);
     }
 
+    /**
+     * 
+     * @param {Boolean} isSuccess 
+     * @param {Action} action 
+     */
     setResources(isSuccess, actionName) {
         const action = this.actions.find(a => a.name.includes(actionName) && a.isResource);
-        if (action) {
-            action.resources.forEach(actionResource => {
-                const resource = this.resources.find(r => r.type === actionResource.type);
-                if (actionResource.isIncreasing && actionResource.onSuccess && isSuccess) {
-                    resource.value = Math.min(resource.max, resource.value + actionResource.modify);
+        this.resources.forEach(playerResource => {
+            
+            let actionResource;
+            let newResourceValue;
+            if (action && action.isResource) {
+                actionResource = action.resources.find(currActionResource => currActionResource.type === playerResource.type);
+            }
+
+            //Update player resource as determined by the action
+            if (actionResource) {
+                if (isSuccess) {
+                    newResourceValue = checkWithinBounds(playerResource.value + actionResource.changeOnSuccess, playerResource.min, playerResource.max);
                 }
-                if (!actionResource.isIncreasing && (actionResource.onSuccess && isSuccess)) {
-                    resource.value = Math.max(resource.min, resource.value - actionResource.modify);
+                else {
+                    newResourceValue = checkWithinBounds(playerResource.value + actionResource.changeOnFail, playerResource.min, playerResource.max);
                 }
-                if (actionResource.isIncreasing && !actionResource.onSuccess && !isSuccess) {
-                    resource.value = Math.min(resource.max, resource.value + actionResource.modify);
+                
+                if (newResourceValue >= playerResource.value && playerResource.increaseEnabled) {
+                    playerResource.value = newResourceValue;
                 }
-                if (!actionResource.isIncreasing && !actionResource.onSuccess && !isSuccess) {
-                    resource.value = Math.max(resource.min, resource.value - actionResource.modify);
+                if (newResourceValue < playerResource.value && playerResource.decreaseEnabled) {
+                    playerResource.value = newResourceValue;
                 }
-            });
-        }
+            }
+            
+            //Increment player resource by its natural rate of change
+            else {
+                newResourceValue += playerResource.naturalRateOfChange;
+                if (newResourceValue >= playerResource.value && playerResource.increaseEnabled) {
+                    playerResource.value = newResourceValue;
+                }
+                if (newResourceValue < playerResource.value && playerResource.decreaseEnabled) {
+                    playerResource.value = newResourceValue;
+                }
+            }
+
+            
+            
+        });
+            
+        
     }
 }
 
@@ -713,7 +742,7 @@ const defaultCharismaAction = {
         decreaseRatePerAction: 1,
         failureThreshold: 3,
         failureCount: 0,
-        remainingTurns: 3
+        remainingTurns: 0
     },
     memorable: true,
     knownFor: "a skilled linguist",
@@ -787,7 +816,7 @@ const customActions = [
             decreaseRatePerAction: 1,
             failureThreshold: 3,
             failureCount: 0,
-            remainingTurns: 3
+            remainingTurns: 0
         },
         memorable: true,
         knownFor: "a skilled fighter",
@@ -795,9 +824,8 @@ const customActions = [
         isResource: true,
         resources: [{
             type: "health",
-            isIncreasing: false,
-            modify: 3,
-            onSuccess: false
+            changeOnSuccess: 0,
+            changeOnFail: -3,
         }],
         preventAction: {},
         overrides: {},
@@ -932,9 +960,8 @@ const customActions = [
         isResource: true,
         resources: [{
             type: "health",
-            isIncreasing: true,
-            modify: 3,
-            onSuccess: true
+            changeOnSuccess: 3,
+            changeOnFail: 0,
         }],
         preventAction: {},
         overrides: {},
@@ -1020,16 +1047,18 @@ let defaultPlayerYou = {
         {
             // The type of resource.
             type: "health",
-            // Is the resource increasing or decreasing naturally over time?
-            isIncreased: false,
+            // Is the resource increasing or decreasing naturally over time? Positive number for increase, negative number for decrease, 0 for no natural change
+            naturalRateOfChange: 1,
             // The current value of the resource.
             value: 10,
             // The maximum value of the resource.
             max: 10,
             // The minimum value of the resource.
             min: 0,
-            // The rate of change for the resource.
-            rate: 1,
+            // Whether or not the resource value is allowed to increase
+            increaseEnabled: true,
+            // Whether or not the resource value is allowed to decrease
+            decreaseEnabled: true,
             // Is the resource critical?
             isCritical: true,
             // Is the resource consumable?
@@ -1498,7 +1527,7 @@ const tester = (state, text, history, storyCards, info) => {
 
         const setPlayerResources = (isActiveTurn, action, isSuccess) => {
             if (action) {
-                activePlayer.setResources(action, isSuccess);
+                activePlayer.setResources(isSuccess, action.name[0]);
             }
         }
 
@@ -1652,7 +1681,7 @@ const tester = (state, text, history, storyCards, info) => {
 
 
 // Quick Testing section ////////////////////////
-/*
+
 const state = {
     memory: { context: "This is the memory", authorsNote: "This is the authors note" },
     game: new Game(defaultGame),
@@ -1676,11 +1705,11 @@ const info = {
 };
 
 
-const inputText = "> You try to test to defeat them."
+const inputText = "> You try to use fighting to defeat them."
 const output = tester(state, inputText, history, storyCards, info);
 
-console.log(`\n\nOutput: ${output.state.memory.frontMemory}\n\n`);
-*/
+//console.log(`\n\nOutput: ${output.state.memory.frontMemory}\n\n`);
+
 
 
 
