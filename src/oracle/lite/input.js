@@ -8,8 +8,6 @@ const modifier = (text) => {
     const DEFAULT_CRITICAL_FAILURE = .05;
     // Chance of critical success, .95 is like rolling a 20 on a 20 sided dice.
     const DEFAULT_CRITICAL_SUCCESS = .95;
-    // Enabled user messages. If you find this feature annoying disable it here.
-    const ENABLED_USER_MESSAGES = false;
 
     // The following are the messages you receive and are send to the AI to signify success or failure.
     // The critical success message
@@ -32,17 +30,6 @@ const modifier = (text) => {
     const getRandomItem = (arr) => arr.length ? arr[Math.floor(Math.random() * arr.length)] : "";
 
     /**
-     * Sends a message to the user if messages are enabled.
-     * @param {string} message The message to send.
-     */
-    const setUserMessage = (message) => {
-        if (ENABLED_USER_MESSAGES) {
-            state.message = message;
-        }
-        return message;
-    }
-
-    /**
      * Decides the fate of the action.
      * @param {number} chance A fraction representing the total probability of success.
      * @returns The message for success or failure.
@@ -55,7 +42,7 @@ const modifier = (text) => {
         const message = (isSuccess ? MESSAGE_SUCCESS : MESSAGE_FAILURE) + ((who === "You" || who === "I") ? "" : "s") +
             (isCritical ? ` ${adjective}` : "") +
             (isSuccess ? "." : "!");
-        return (isSuccess ? " And " : " But ") + setUserMessage(who + " " + message);
+        return (isSuccess ? " And " : " But ") + who + " " + message;
     }
 
     /**
